@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "axios": "^1.12.2",
+    "axios-ntlm": "^1.4.6",
+    "dotenv": "^17.2.3",
+    "httpntlm": "^1.8.13"
+  }
+}
