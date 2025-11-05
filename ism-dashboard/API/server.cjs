@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 // Allow requests from your React dev server
 app.use(cors({ origin: 'http://localhost:5173' }));
+app.use('/', express.static('dist'))
 
 // Create HTTPS agent that ignores invalid/self-signed certs
 const httpsAgent = new https.Agent({
