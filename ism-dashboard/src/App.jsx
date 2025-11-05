@@ -22,7 +22,7 @@ function App() {
 
   const sendSID = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/incidents', {
+      const response = await axios.get('/api/incidents', {
         params: { sid: sid }
       });
       if (response.status === 200) {
@@ -45,7 +45,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://localhost:5000/api/incidents', {
+      const response = await axios.get('/api/incidents', {
         params: { sid: sid }
       });
       const data = response.data.value || response.data;
@@ -65,7 +65,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://localhost:5000/api/sr', {
+      const response = await axios.get('/api/sr', {
         params: { sid: sid }
       });
       const data = response.data.value || response.data;
@@ -89,7 +89,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://localhost:5000/api/incidents_esc', {
+      const response = await axios.get('/api/incidents_esc', {
         params: { sid: sid }
       });
       const data = response.data.value || response.data;
@@ -109,7 +109,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      await axios.get('http://localhost:5000/api/activeIncidents', {
+      await axios.get('/api/activeIncidents', {
         params: { sid: sid }
       })
       .then((res) => {
@@ -133,7 +133,7 @@ function App() {
 
 
   useEffect(() => {
-    const response = axios.get('http://localhost:5000/api/incidents', {
+    const response = axios.get('/api/incidents', {
       params: { sid: localStorage.getItem("SID") }
       }).then((res)=>{
       if (res.status === 200) {
