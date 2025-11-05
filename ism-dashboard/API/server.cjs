@@ -7,7 +7,7 @@ const https = require('https');
 // const sid = "itservicedesk.kht.local#G8KO3EGO244STGV8NQE28LACF2NLHMTP#18"
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.use(express.json());
 // Allow requests from your React dev server
 app.use(cors({ origin: 'http://localhost:5173' }));
