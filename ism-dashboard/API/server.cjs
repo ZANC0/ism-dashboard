@@ -4,8 +4,6 @@ const axios = require('axios');
 const cors = require('cors');
 const https = require('https');
 
-// const sid = "itservicedesk.kht.local#G8KO3EGO244STGV8NQE28LACF2NLHMTP#18"
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 app.use(express.json());
