@@ -187,17 +187,12 @@ function App() {
       :
       <>
       <div className='lastRefresh' > 
-          <span>Refreshes every 1 minute</span>
-          <span>Last Refresh:</span>
-          <span>{lastRefresh}</span>
+          <h3>Refreshes every 1 minute - Last Refresh: {lastRefresh}</h3>
       </div>
       
       <div className="App">
 {/* 
-
-// TODO Play a sound when a escalated ticket is fetched
-// TODO for escalted tickets component add a field of the latest change to the ticket otherwise put No recent changes
-// TODO add a graph of the amount of tickets per person
+Fi
 
  */}
         <div className='section'>
