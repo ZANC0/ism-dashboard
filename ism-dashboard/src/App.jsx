@@ -4,16 +4,23 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { PieChart, pieArcLabelClasses, legendClasses } from '@mui/x-charts';
 
 function App() {
   const [incidents, setIncidents] = useState([]);
   const [servicereq, setServicereq] = useState([]);
+  const [serviceCount, setServiceCount] = useState([]);
   const [incidents_esc, setIncidents_esc] = useState([]);
   const [activeinc, setActiveinc] = useState([]);
+  const [resolvedinc, setResolvedinc] = useState([]);
+  const [priorityCounts, setpriorityCounts] = useState([]);
+
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
   const [enableGraph, setStateGraph] = useState(false)
+  const [enableSRGraph, setSRGraph] = useState(false)
   const [isAuthenticated, setIsAuthentication] = useState(false);
   const itemsPerPage = 10;
   const [sid, setSid] = useState("");
@@ -22,7 +29,7 @@ function App() {
 
   const sendSID = async () => {
     try {
-      const response = await axios.get('https://ism-dashboard.onrender.com/api/incidents', {
+      const response = await axios.get('http://localhost:5000/api/incidents', {
         params: { sid: sid }
       });
       if (response.status === 200) {
@@ -45,12 +52,23 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://ism-dashboard.onrender.com/api/incidents', {
+      const response = await axios.get('http://localhost:5000/api/incidents', {
         params: { sid: sid }
       });
       const data = response.data.value || response.data;
       const sorted = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
       setIncidents(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
+
+
+      // TODO Fix the data fetch for number of incidents by priority
+      // activeinc.forEach(item => {
+      //   const counts = {};
+      //   console.log(item)
+      //   const key = `priority ${item.Priority}`; // or item.Priority depending on API
+      //   counts[key] = (counts[key] || 0) + 1;
+      // });
+      // console.log(counts)
+
     } catch (err) {
       console.error('Error fetching incidents:', err);
       setError('Failed to fetch incidents');
@@ -65,7 +83,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://ism-dashboard.onrender.com/api/sr', {
+      const response = await axios.get('http://localhost:5000/api/sr', {
         params: { sid: sid }
       });
       const data = response.data.value || response.data;
@@ -75,6 +93,14 @@ function App() {
 
       const sorted = [...data].sort((a, b) => Number(b.ServiceReqNumber) - Number(a.ServiceReqNumber));
       setServicereq(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
+
+      const c = {}
+
+      response.data.value.forEach((inc) => {
+        const owner = inc.Owner;
+        c[owner] = (c[owner] || 0) + 1; // Initialize and increment count
+      });
+      setServiceCount(c)
     } catch (err) {
       console.error('Error fetching sr:', err);
       setError('Failed to fetch sr');
@@ -89,7 +115,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://ism-dashboard.onrender.com/api/incidents_esc', {
+      const response = await axios.get('http://localhost:5000/api/incidents_esc', {
         params: { sid: sid }
       });
       const data = response.data.value || response.data;
@@ -109,7 +135,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      await axios.get('https://ism-dashboard.onrender.com/api/activeIncidents', {
+      await axios.get('http://localhost:5000/api/activeIncidents', {
         params: { sid: sid }
       })
       .then((res) => {
@@ -119,6 +145,8 @@ function App() {
           const owner = inc.Owner;
           c[owner] = (c[owner] || 0) + 1; // Initialize and increment count
         });
+
+        
 
         setActiveinc(c);
         console.log("Counts:", c); // log the built dictionary directly
@@ -131,9 +159,43 @@ function App() {
     }
   };
 
+  const fetchResolvedperOwner = async () => {
+    const date = new Date();
+    setLastRefresh(date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds());
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:5000/api/resolved_incidents_today', {
+        params: { sid: sid }
+      });
+      const ownerRes = {}
+      response.data.value.forEach((inc) => {
+          
+          ownerRes[inc.Owner] = (ownerRes[inc.Owner] || 0) + 1; // Initialize and increment count
+      });
+
+      const ownerResData = Object.entries(ownerRes).map(([key, value]) => ({
+        id: key,
+        value,
+        label: key + " - " + value,
+      }));
+      // TODO from the incidents fetched, sort them in a dictionary for each owner and the amount of resolved tickets assigned
+      setResolvedinc(ownerResData); // ✅ show top 10 only
+      console.log(ownerResData)
+    } catch (err) {
+      console.error('Error fetching resolved incidents:', err);
+      setError('Failed to fetch resolved incidents');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+ 
+  
+
 
   useEffect(() => {
-    const response = axios.get('https://ism-dashboard.onrender.com/api/incidents', {
+    const response = axios.get('http://localhost:5000/api/incidents', {
       params: { sid: localStorage.getItem("SID") }
       }).then((res)=>{
       if (res.status === 200) {
@@ -153,6 +215,7 @@ function App() {
       fetchServiceReq();
       fetchEscIncidents();
       fetchActiveIncidents();
+      fetchResolvedperOwner();
     }
   }, [isAuthenticated]);
 
@@ -163,6 +226,8 @@ function App() {
         fetchServiceReq();
         fetchEscIncidents();
         fetchActiveIncidents();
+        fetchResolvedperOwner();
+        
       }, 60000);
       return () => clearInterval(interval);
     }
@@ -240,7 +305,23 @@ Fi
           {loading && <p>Loading service requests...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
 
-          {!loading && !error && (
+          {!loading && !error && enableSRGraph ? (
+            <BarChart
+              xAxis={[
+                {
+                  id: 'barCategories',
+                  data: Object.keys(serviceCount),
+                }
+              ]}
+              series={[
+                {
+                  data: Object.values(serviceCount),
+                }
+              ]}
+              
+              height={300}
+            />
+          ):(
             <>
               <table className="incident-info">
                 <thead>
@@ -249,7 +330,6 @@ Fi
                     <th>Subject</th>
                     <th>Status</th>
                     <th>Owner</th>
-                    <th>Description</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -259,13 +339,15 @@ Fi
                       <td>{sr.Subject}</td>
                       <td>{sr.Status}</td>
                       <td>{sr.Owner}</td>
-                      <td>{sr.Symptom}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </>
+            
           )}
+           <button className={enableSRGraph ? 'toggleSRGraph_active' : "toggleSRGraph"} onClick={() => (setSRGraph(!enableSRGraph))}>Toggle Graph</button>
+        
         </div>
 
         <div className='section'>
@@ -343,7 +425,57 @@ Fi
         
           <button className={enableGraph ? 'toggleGraph_active' : "toggleGraph"} onClick={() => (setStateGraph(!enableGraph))}>Toggle Graph</button>
         </div>
-        
+
+        <div className='section'>
+          <h2>Resolved Tickets Today</h2>
+
+          {loading && <p>Loading service requests...</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+
+          {!loading && !error && (
+            <>
+              <PieChart
+              
+              series={[{ innerRadius: 50, outerRadius: 100, data: resolvedinc, arcLabel: 'value' }]}
+              sx={{
+                  [`& .${legendClasses.label}`]: {
+                    color:"white"
+                  },
+                  [`& .${pieArcLabelClasses.root}`]: {
+                    fill: 'white',   // 👈 your text color
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                  },
+                }}
+              height={300}
+            />
+            </>
+          )}
+        </div>
+
+        {/* <div className='section'>
+          <h2>Ticket Priority</h2>
+          <span>Total: {servicereq.length}</span>
+
+          {loading && <p>Loading service requests...</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+
+          {!loading && !error && (
+            <>
+              <PieChart
+              
+              series={[
+                {
+                  data: resolvedinc,
+                }
+              ]}
+              
+              height={300}
+            />
+            </>
+          )}
+        </div>
+         */}
       </div>
       </>
   );
