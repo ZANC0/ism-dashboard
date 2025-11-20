@@ -11,6 +11,7 @@
 
 /* Dashboard grid */
 .App {
+  width: 100%;
   margin-top: 15px;
   display: grid;
   justify-self: center;
@@ -19,14 +20,17 @@
   gap: 5rem;
   justify-content: center;
   align-items: stretch;
+  justify-items: center;
 }
 
 /* Individual tile/section */
 .section {
   width: 100%;
   max-width: 600px;
-  min-height: 300px;
-  overflow-y: auto;
+  min-height: 100px;
+  max-height: 400px;
+  overflow-y: scroll;
+  overflow-x:hidden;
   background: #111418;  /* deep gray-blue shade */
   border-radius: 18px;
   padding: 1.5rem;

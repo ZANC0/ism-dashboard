@@ -39,9 +39,9 @@ body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 340px;
-  width: 100vw;
-  min-height: 100vh;
+  min-width: 1280px;
+  width: 100%;
+  min-height: 1080px;
   background: var(--bg-primary);
   color: var(--text-primary);
 }

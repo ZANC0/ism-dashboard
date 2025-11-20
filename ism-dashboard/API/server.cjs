@@ -3,7 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const https = require('https');
-const date = new Date()
+const { useState } = require('react');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,7 +25,7 @@ app.get('/api/incidents', async (req, res) => {
     const sid = req.query.sid
     // Active Windows 11 Incidents
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=OwnerTeam eq 'Windows 11 Project' and Status eq 'Active' and Owner eq '$NULL'&$top=100",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and Status eq 'Active' and Owner eq '$NULL'&$top=100",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -44,7 +44,7 @@ app.get('/api/sr', async (req, res) => {
   try {
     const sid = req.query.sid
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/servicereqs?$select=ServiceReqNumber,Status,Subject,Owner&$filter=OwnerTeam eq 'Windows 11 Project' and Status eq 'Active'&top=25",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/servicereqs?$select=ServiceReqNumber,Status,Subject,Owner&$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and Status eq 'Active'",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -64,7 +64,7 @@ app.get('/api/incidents_esc', async (req, res) => {
   try {
     const sid = req.query.sid
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=CE_Escalated eq true and OwnerTeam eq 'Windows 11 Project' and Status eq 'Active'&$top=100",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=CE_Escalated eq true and (OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and Status eq 'Active'&$top=100",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -84,7 +84,7 @@ app.get('/api/activeIncidents', async (req, res) => {
   try {
     const sid = req.query.sid
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=OwnerTeam eq 'Windows 11 Project' and Status eq 'Active' and Owner ne '$NULL'&$top=100",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and Status eq 'Active' and Owner ne '$NULL'&$top=100",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -103,9 +103,11 @@ app.get('/api/activeIncidents', async (req, res) => {
 app.get('/api/resolved_incidents_today', async (req, res) => {
   try {
     const sid = req.query.sid
+    const new_date = new Date()
+    const new_date_str = new_date.getFullYear()+"-"+(new_date.getMonth()+1).toString().padStart(2,0)+"-"+new_date.getDate().toString().padStart(2,0)
     // Active Windows 11 Incidents
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=OwnerTeam eq 'Windows 11 Project' and ResolvedDateTime ge "+date.getFullYear()+"-"+(date.getMonth()+1).toString().padStart(2,0)+"-"+date.getDate().toString().padStart(2,0)+"T00:00:00Z&$top=100",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and ResolvedDateTime ge "+new_date_str+""+"T00:00:00Z&$top=100",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID

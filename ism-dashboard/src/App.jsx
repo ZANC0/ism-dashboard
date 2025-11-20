@@ -4,7 +4,7 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { PieChart, pieArcLabelClasses, legendClasses } from '@mui/x-charts';
+import { PieChart, pieArcLabelClasses, legendClasses, chartsAxisClasses } from '@mui/x-charts';
 
 function App() {
   const [incidents, setIncidents] = useState([]);
@@ -87,20 +87,24 @@ function App() {
         params: { sid: sid }
       });
       const data = response.data.value || response.data;
-      console.log(data)
       // ✅ Filter only "active" service requests
-      const active_data = data.filter((item) => item.Status === "Active" || item.Active === true);
+      // const active_data = data.filter((item) => item.Status === "Active" || item.Active === true);
 
       const sorted = [...data].sort((a, b) => Number(b.ServiceReqNumber) - Number(a.ServiceReqNumber));
       setServicereq(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
+      if (sorted.length > 0){
+        const c = {}
 
-      const c = {}
-
-      response.data.value.forEach((inc) => {
-        const owner = inc.Owner;
-        c[owner] = (c[owner] || 0) + 1; // Initialize and increment count
-      });
-      setServiceCount(c)
+        response.data.value.forEach((inc) => {
+          const owner = inc.Owner;
+          c[owner] = (c[owner] || 0) + 1; // Initialize and increment count
+        });
+        setServiceCount(c)
+      }
+      else{
+        setServiceCount({})
+      }
+      
     } catch (err) {
       console.error('Error fetching sr:', err);
       setError('Failed to fetch sr');
@@ -170,8 +174,9 @@ function App() {
       });
       const ownerRes = {}
       response.data.value.forEach((inc) => {
-          
+        if (inc.Owner !== null){
           ownerRes[inc.Owner] = (ownerRes[inc.Owner] || 0) + 1; // Initialize and increment count
+        }
       });
 
       const ownerResData = Object.entries(ownerRes).map(([key, value]) => ({
@@ -412,16 +417,25 @@ Fi
               height={300}
             />)
             :
-            (<ul>
-              {Object.entries(activeinc).map((entry,index)=>(
-                <li>
-                  {entry[0]} - {entry[1]}
-                </li>
-              ))}
-              </ul>
-            )
-                     
-        }
+            (
+            <table>
+              <thead>
+                <tr>
+                  <th>Owner</th>
+                  <th>Active Incidents</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(activeinc).map(([key, value], index) => (
+                  <tr key={index}>
+                    <td>{key}</td>
+                    <td>{value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            )           
+          }
         
           <button className={enableGraph ? 'toggleGraph_active' : "toggleGraph"} onClick={() => (setStateGraph(!enableGraph))}>Toggle Graph</button>
         </div>
