@@ -400,24 +400,7 @@ Fi
           {loading && <p>Loading service requests...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
           {/* //TODO if the amount of incidetns are over 20, make the bar amber, if 25 or over made it red  */}
-          {(!loading && !error) && enableGraph ?
-            (<BarChart
-              xAxis={[
-                {
-                  id: 'barCategories',
-                  data: Object.keys(activeinc),
-                }
-              ]}
-              series={[
-                {
-                  data: Object.values(activeinc),
-                }
-              ]}
-              
-              height={300}
-            />)
-            :
-            (
+          {!loading && !error && 
             <table>
               <thead>
                 <tr>
@@ -433,11 +416,8 @@ Fi
                   </tr>
                 ))}
               </tbody>
-            </table>
-            )           
+            </table>        
           }
-        
-          <button className={enableGraph ? 'toggleGraph_active' : "toggleGraph"} onClick={() => (setStateGraph(!enableGraph))}>Toggle Graph</button>
         </div>
 
         <div className='section'>
