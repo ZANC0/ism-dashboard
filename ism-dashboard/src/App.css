@@ -1,71 +1,91 @@
 /* Root container */
 #root {
   width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
+  height: 100vh;              /* makes the root match video height */
   text-align: center;
-  background: #0d0d0d; /* slightly softer than pure black */
+  background: #0d0d0d;
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  color: #e5e7eb; /* soft light gray */
+  color: #e5e7eb;
+
+  display: flex;              /* allow child grids to center properly */
+  flex-direction: column;
+  justify-content: center;    /* centers grid vertically */
+  align-items: center;        /* centers grid horizontally */
+  overflow: hidden;           /* prevents scroll beyond video bounds */
 }
 
 /* Dashboard grid */
 .App {
   width: 100%;
-  margin-top: 15px;
+  height: 100%;   /* THIS makes the grid scale with the video */
+  
   display: grid;
-  justify-self: center;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 5rem;
-  justify-content: center;
-  align-items: stretch;
+
+  grid-template-columns: repeat(2, 1fr);
+  
+  gap:0.2rem;
+  
   justify-items: center;
+  align-items: center;
+  overflow-y: scroll;
+  overflow-x:hidden;
+}
+.login-container{
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Individual tile/section */
 .section {
+  width:  300px;
+  height: 200px;   /* Makes each tile fill its grid cell */
+ 
+  height: 100%;
   width: 100%;
-  max-width: 600px;
-  min-height: 100px;
-  max-height: 400px;
-  overflow-y: scroll;
-  overflow-x:hidden;
-  background: #111418;  /* deep gray-blue shade */
-  border-radius: 18px;
-  padding: 1.5rem;
 
-  box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.4),
-    0 0 25px rgba(20, 20, 20, 0.5) inset;
-
-  border: 1px solid rgba(255, 255, 255, 0.06);
-
-  transition: all 0.25s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-color:rgb(53, 53, 53);
+  border-width: 2px;
+  border-style: solid;
+  background: #111418;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+}
+.section-title{
+  z-index: 1;
+  top:0;
+  position: sticky;
+  background-color: inherit;
+  padding:10px auto;
+  width: 100%;
+  font-size: 1rem;
 }
 
-/* Subtle hover lift */
-.section:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.55),
-    0 0 30px rgba(255, 255, 255, 0.05) inset;
-  border-color: rgba(255, 255, 255, 0.15);
+
+.latestci{
+  padding: 0;
+  margin: 20px;
+  position: relative;
+
 }
 
 /* Table container */
 .incident-info {
-  width: 100%;
+  width: 50%;
   border-collapse: collapse;
-  margin-top: 1rem;
-  font-size: 0.95rem;
+  margin-top: 0;
+  font-size: 0.9rem;
   background-color: #111418;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+
 }
 
 /* Header styling */
@@ -78,7 +98,7 @@
 
 .incident-info th {
   text-align: center;
-  padding: 0.75rem 1rem;
+  padding: 0;
   font-weight: 600;
   color: #94a3b8; /* slate-400 */
   border-bottom: 2px solid #22272c;
@@ -104,11 +124,11 @@
 }
 
 /* Last refresh bar */
-.lastRefresh {
+.topinfo {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
   align-items: center;
+
 
   position: sticky;
   top: 0;
@@ -117,10 +137,9 @@
   color: #e2e8f0;
 
   font-weight: 600;
-  padding: 0.35rem 0.5rem;
+  padding: 0.35rem;
 
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
 
   text-transform: uppercase;
   letter-spacing: 0.7px;
@@ -129,11 +148,11 @@
 
 /* Scrollbar styling */
 .section::-webkit-scrollbar {
-  width: 8px;
+  width: 5px;
 }
 
 .section::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.3);
+  background-color: rgba(189, 208, 234, 0.3);
   border-radius: 6px;
 }
 

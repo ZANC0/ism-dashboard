@@ -14,6 +14,7 @@ function App() {
   const [activeinc, setActiveinc] = useState([]);
   const [resolvedinc, setResolvedinc] = useState([]);
   const [priorityCounts, setpriorityCounts] = useState([]);
+  const [latestCI, setLatestCI] = useState(null);
 
 
   const [loading, setLoading] = useState(false);
@@ -94,7 +95,7 @@ function App() {
       setServicereq(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
       if (sorted.length > 0){
         const c = {}
-
+        
         response.data.value.forEach((inc) => {
           const owner = inc.Owner;
           c[owner] = (c[owner] || 0) + 1; // Initialize and increment count
@@ -195,6 +196,37 @@ function App() {
     }
   };
 
+  const fetchLatestCI = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:5000/api/latest_CI', {
+        params: { sid: sid }
+      });
+      
+      
+      const current_number = response.data.value[0].Name
+      const prefix = current_number.slice(0, 2);      // "KR"
+      const number = parseInt(current_number.slice(2, 7), 10); // 00001 → 1
+
+      const nextNumber = String(number + 1).padStart(5, "0");
+
+      const latest_number = `${prefix}${nextNumber}`
+
+      setLatestCI(latest_number)
+
+      console.log(latest_number)
+
+      
+
+    } catch (err) {
+      console.error('Error fetching latest CI:', err);
+      setError('Failed to fetch latest CI');
+    } finally {
+      setLoading(false);
+    }
+};
+
  
   
 
@@ -221,6 +253,7 @@ function App() {
       fetchEscIncidents();
       fetchActiveIncidents();
       fetchResolvedperOwner();
+      fetchLatestCI();
     }
   }, [isAuthenticated]);
 
@@ -232,6 +265,7 @@ function App() {
         fetchEscIncidents();
         fetchActiveIncidents();
         fetchResolvedperOwner();
+        fetchLatestCI();
         
       }, 60000);
       return () => clearInterval(interval);
@@ -256,25 +290,37 @@ function App() {
 
       :
       <>
-      <div className='lastRefresh' > 
+      <div className='topinfo' > 
           <h3>Refreshes every 1 minute - Last Refresh: {lastRefresh}</h3>
+          <div className='latestci'>
+            <h3 className=''>Latest KR:</h3>
+
+            {loading && <p>Loading service requests...</p>}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+
+            {!loading && !error && (
+              <>
+              <p>{latestCI}</p>
+              </>
+            )}
+        </div>
+          
       </div>
       
+      
       <div className="App">
-{/* 
-Fi
+        
+        
 
- */}
         <div className='section'>
-          
-          
+  
 
           {loading && <p>Loading incidents...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
 
           {!loading && !error && (
             <>
-              <h2>Unassigned Active W11 Incidents</h2>
+              <h2 className='section-title'>Unassigned Active W11 Incidents</h2>
               <span>Total:  {incidents.length}</span>
               
               <table className="incident-info">
@@ -304,7 +350,7 @@ Fi
         </div>
 
         <div className='section'>
-          <h2>Service Requests</h2>
+          <h2 className='section-title'>Service Requests</h2>
           <span>Total: {servicereq.length}</span>
 
           {loading && <p>Loading service requests...</p>}
@@ -356,8 +402,11 @@ Fi
         </div>
 
         <div className='section'>
-          <h2>Escalated W11 Incidents</h2>
-          <span>Total: {incidents_esc.length}</span>
+          <h2 className='section-title'>
+            Escalated W11 Incidents
+            <p>Total: {incidents_esc.length}</p>
+          </h2>
+          
 
           {loading && <p>Loading escalated incidents...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -396,7 +445,7 @@ Fi
         </div>
 
         <div className='section'>
-          <h2>Team's Active Incidents by Owner</h2>
+          <h2 className='section-title'>Team's Active Incidents by Owner</h2>
           {loading && <p>Loading service requests...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
           {/* //TODO if the amount of incidetns are over 20, make the bar amber, if 25 or over made it red  */}
@@ -421,7 +470,7 @@ Fi
         </div>
 
         <div className='section'>
-          <h2>Resolved Tickets Today</h2>
+          <h2 className='section-title'>Resolved Tickets Today</h2>
 
           {loading && <p>Loading service requests...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -446,6 +495,8 @@ Fi
             </>
           )}
         </div>
+
+        
 
         {/* <div className='section'>
           <h2>Ticket Priority</h2>

@@ -1,10 +1,10 @@
 :root {
-  /* Typography */
+  /* Keep all your variables untouched */
+  background-color: black;
   font-family: system-ui, Inter, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.6;
   font-weight: 400;
 
-  /* Modern dark theme colors */
   --bg-primary: #0d0f11;
   --bg-secondary: #1a1d21;
   --text-primary: #e5e7eb;
@@ -17,12 +17,16 @@
   color: var(--text-primary);
   background-color: var(--bg-primary);
 
-  /* Rendering improvements */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Add these: ensures responsive video + layouts sync to viewport */
+  width: 100vw;
+  height: 100vh;
 }
+
 
 /* Links */
 a {
@@ -36,14 +40,17 @@ a:hover {
 
 /* Layout defaults */
 body {
+  background-color: black;
   margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+
   display: flex;
-  place-items: center;
-  min-width: 1280px;
-  width: 100%;
-  min-height: 1080px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  justify-content: center;
+  align-items: center;
+
+  font-family: system-ui, Inter, Avenir, Helvetica, Arial, sans-serif;
 }
 
 h1 {
