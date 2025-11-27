@@ -16,14 +16,15 @@
 
 /* Dashboard grid */
 .App {
+  padding:20px 0;
   width: 100%;
   height: 100%;   /* THIS makes the grid scale with the video */
   
   display: grid;
 
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   
-  gap:0.2rem;
+  gap:2rem;
   
   justify-items: center;
   align-items: center;
@@ -40,17 +41,16 @@
 
 /* Individual tile/section */
 .section {
-  width:  300px;
-  height: 200px;   /* Makes each tile fill its grid cell */
- 
-  height: 100%;
+  max-width: 500px;
   width: 100%;
+  height: 100%;
 
   overflow-y: auto;
   overflow-x: hidden;
   border-color:rgb(53, 53, 53);
   border-width: 2px;
   border-style: solid;
+  border-radius: 5px;
   background: #111418;
   padding: 0;
   margin: 0;
@@ -69,19 +69,13 @@
 }
 
 
-.latestci{
-  padding: 0;
-  margin: 20px;
-  position: relative;
-
-}
 
 /* Table container */
 .incident-info {
-  width: 50%;
+  width: 90%;
   border-collapse: collapse;
   margin-top: 0;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   background-color: #111418;
   border-radius: 10px;
   overflow: hidden;
@@ -122,12 +116,17 @@
   background-color: #1f242a;
   transition: background-color 0.2s ease-in-out;
 }
-
+.top-element{
+  width: 100%;
+}
 /* Last refresh bar */
 .topinfo {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  justify-content: center;
+  align-content: center;
+ 
+  height: 20px;
 
 
   position: sticky;
@@ -136,15 +135,14 @@
   background: linear-gradient(90deg, #334155, #1e293b); /* cool slate gradient */
   color: #e2e8f0;
 
-  font-weight: 600;
   padding: 0.35rem;
 
-  border-radius: 10px;
 
   text-transform: uppercase;
   letter-spacing: 0.7px;
   z-index: 2;
 }
+
 
 /* Scrollbar styling */
 .section::-webkit-scrollbar {

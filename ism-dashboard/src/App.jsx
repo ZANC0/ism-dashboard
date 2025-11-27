@@ -15,6 +15,7 @@ function App() {
   const [resolvedinc, setResolvedinc] = useState([]);
   const [priorityCounts, setpriorityCounts] = useState([]);
   const [latestCI, setLatestCI] = useState(null);
+  const [totalW11, setTotalW11] = useState(null)
 
 
   const [loading, setLoading] = useState(false);
@@ -59,6 +60,14 @@ function App() {
       const data = response.data.value || response.data;
       const sorted = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
       setIncidents(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
+      
+    
+    const responsew11 = await axios.get('http://localhost:5000/api/W11Q', {
+        params: { sid: sid }
+      });
+    setTotalW11(responsew11.data.value.length)
+    
+      
 
 
       // TODO Fix the data fetch for number of incidents by priority
@@ -170,11 +179,15 @@ function App() {
     setLoading(true);
     setError(null);
     try {
+      const date_obj = new Date()
+      const new_date = date_obj.getFullYear()+"-"+(date_obj.getMonth()+1).toString().padStart(2,0)+"-"+date_obj.getDate().toString().padStart(2,0)
       const response = await axios.get('http://localhost:5000/api/resolved_incidents_today', {
-        params: { sid: sid }
+        params: { sid: sid, date:new_date }
       });
       const ownerRes = {}
-      response.data.value.forEach((inc) => {
+      const ownerData = response.data.value || {}
+      try{
+        ownerData.forEach((inc) => {
         if (inc.Owner !== null){
           ownerRes[inc.Owner] = (ownerRes[inc.Owner] || 0) + 1; // Initialize and increment count
         }
@@ -188,6 +201,10 @@ function App() {
       // TODO from the incidents fetched, sort them in a dictionary for each owner and the amount of resolved tickets assigned
       setResolvedinc(ownerResData); // ✅ show top 10 only
       console.log(ownerResData)
+    } catch (err){
+      console.log("test")
+    }
+      
     } catch (err) {
       console.error('Error fetching resolved incidents:', err);
       setError('Failed to fetch resolved incidents');
@@ -227,6 +244,25 @@ function App() {
     }
 };
 
+  const fetchCIbyOS = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:5000/api/CIbyOS', {
+        params: { sid: sid },
+      });
+      const data = response.data
+      console.log(data)
+
+    } catch (err) {
+      console.error('Error fetching latest CI:', err);
+      setError('Failed to fetch latest CI');
+    } finally {
+      setLoading(false);
+    }
+};
+
+
  
   
 
@@ -254,6 +290,7 @@ function App() {
       fetchActiveIncidents();
       fetchResolvedperOwner();
       fetchLatestCI();
+      fetchCIbyOS();
     }
   }, [isAuthenticated]);
 
@@ -266,7 +303,7 @@ function App() {
         fetchActiveIncidents();
         fetchResolvedperOwner();
         fetchLatestCI();
-        
+        fetchCIbyOS();
       }, 60000);
       return () => clearInterval(interval);
     }
@@ -287,41 +324,29 @@ function App() {
         <button onClick={sendSID}>Log In</button>
         {error && <p style={{ color: "red" }}>{error}</p>}
       </div>
-
       :
       <>
-      <div className='topinfo' > 
-          <h3>Refreshes every 1 minute - Last Refresh: {lastRefresh}</h3>
-          <div className='latestci'>
-            <h3 className=''>Latest KR:</h3>
-
+      <div className='top-element'>
             {loading && <p>Loading service requests...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
 
             {!loading && !error && (
-              <>
-              <p>{latestCI}</p>
-              </>
+              <div className='topinfo'>
+                
+                
+              </div>
             )}
-        </div>
-          
       </div>
       
       
       <div className="App">
-        
-        
-
         <div className='section'>
-  
-
           {loading && <p>Loading incidents...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
-
           {!loading && !error && (
             <>
               <h2 className='section-title'>Unassigned Active W11 Incidents</h2>
-              <span>Total:  {incidents.length}</span>
+              <h3> Total W11 Queue: {totalW11}</h3>
               
               <table className="incident-info">
                 <thead>
@@ -330,7 +355,6 @@ function App() {
                     <th>Subject</th>
                     <th>Status</th>
                     <th>Priority</th>
-                    <th>Owner</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -340,7 +364,6 @@ function App() {
                       <td>{incident.Subject}</td>
                       <td>{incident.Status}</td>
                       <td>{incident.Priority}</td>
-                      <td>{incident.Owner}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -446,7 +469,7 @@ function App() {
 
         <div className='section'>
           <h2 className='section-title'>Team's Active Incidents by Owner</h2>
-          {loading && <p>Loading service requests...</p>}
+          {loading && <p>Loading Active Tickets...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
           {/* //TODO if the amount of incidetns are over 20, make the bar amber, if 25 or over made it red  */}
           {!loading && !error && 
@@ -472,28 +495,41 @@ function App() {
         <div className='section'>
           <h2 className='section-title'>Resolved Tickets Today</h2>
 
-          {loading && <p>Loading service requests...</p>}
+          {loading && <p>Loading Resolved Tickets...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
 
           {!loading && !error && (
             <>
               <PieChart
               
-              series={[{ innerRadius: 50, outerRadius: 100, data: resolvedinc, arcLabel: 'value' }]}
+              series={[{ innerRadius: 20, outerRadius: 60, data: resolvedinc, arcLabel: 'value' }]}
               sx={{
                   [`& .${legendClasses.label}`]: {
                     color:"white"
                   },
                   [`& .${pieArcLabelClasses.root}`]: {
                     fill: 'white',   // 👈 your text color
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: 'bold',
+                    
                   },
                 }}
-              height={300}
+              height={150}
+              width={130}
             />
             </>
           )}
+        </div>
+
+        <div className='section'>
+          <h2 className='section-title'>Next Available KR</h2>
+          {loading && <p>Loading KR...</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+
+          {!loading && !error && (
+            <h1>{latestCI} </h1>
+          )}
+          
         </div>
 
         

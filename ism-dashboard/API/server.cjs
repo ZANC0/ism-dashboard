@@ -40,6 +40,26 @@ app.get('/api/incidents', async (req, res) => {
   }
 });
 
+app.get('/api/W11Q', async (req, res) => {
+  try {
+    const sid = req.query.sid
+    // Active Windows 11 Incidents
+    const response = await axios.get(
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=OwnerTeam eq 'Windows 11 Project' and Status eq 'Active'&$top=100",
+      {
+        headers: {
+          Cookie: `SID=${sid}` // your SID
+        },
+        httpsAgent, // use agent to ignore SSL errors
+      }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error fetching incidents from server:', err.message);
+    res.status(500).json({ error: 'Failed to fetch incidents' });
+  }
+});
+
 app.get('/api/sr', async (req, res) => {
   try {
     const sid = req.query.sid
@@ -103,11 +123,10 @@ app.get('/api/activeIncidents', async (req, res) => {
 app.get('/api/resolved_incidents_today', async (req, res) => {
   try {
     const sid = req.query.sid
-    const new_date = new Date()
-    const new_date_str = new_date.getFullYear()+"-"+(new_date.getMonth()+1).toString().padStart(2,0)+"-"+new_date.getDate().toString().padStart(2,0)
+    const new_date = req.query.date
     // Active Windows 11 Incidents
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and ResolvedDateTime ge "+new_date_str+""+"T00:00:00Z&$top=100",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and ResolvedDateTime ge "+new_date+""+"T00:00:00Z&$top=100",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -142,9 +161,29 @@ app.get('/api/latest_CI', async (req, res) => {
   }
 });
 
+app.get('/api/CIbyOS', async (req, res) => {
+  try {
+    const sid = req.query.sid
+    // Active Windows 11 Incidents
+    const response = await axios.get(
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$select=OperatingSystem&$top=100",
+      {
+        headers: {
+          Cookie: `SID=${sid}` // your SID
+        },
+        httpsAgent, // use agent to ignore SSL errors
+      }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error fetching lastest CI from server:', err.message);
+    res.status(500).json({ error: 'Failed to fetch lastest CI' });
+  }
+});
 
 
 
-app.listen(PORT, () => {
+
+app.listen(PORT,'0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
