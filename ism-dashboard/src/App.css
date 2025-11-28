@@ -1,36 +1,42 @@
 /* Root container */
 #root {
   width: 100%;
-  height: 100vh;              /* makes the root match video height */
+  height: 100vh;
   text-align: center;
   background: #0d0d0d;
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   color: #e5e7eb;
 
-  display: flex;              /* allow child grids to center properly */
-  flex-direction: column;
-  justify-content: center;    /* centers grid vertically */
-  align-items: center;        /* centers grid horizontally */
-  overflow: hidden;           /* prevents scroll beyond video bounds */
+  display: block;      /* ⬅ prevents forced centering */
+  overflow: hidden;
 }
 
 /* Dashboard grid */
 .App {
-  padding:20px 0;
   width: 100%;
-  height: 100%;   /* THIS makes the grid scale with the video */
-  
+  height: 100%;
+
   display: grid;
 
-  grid-template-columns: repeat(3, 1fr);
-  
-  gap:2rem;
-  
-  justify-items: center;
-  align-items: center;
-  overflow-y: scroll;
-  overflow-x:hidden;
+  /* responsive grid, tiles fill around first cell */
+  grid-template-columns: 2fr repeat(2, 1fr);
+  grid-template-rows: 2fr 1fr;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+
+  gap:0.3rem;
+
+  justify-items: stretch;   /* ⬅ no more centering problems */
+  align-items: start;
+
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
+.App > :first-child {
+  grid-area: 1 / 1 / 2 / 2;
+}
+
 .login-container{
   display: flex;
   height: 100%;
@@ -41,16 +47,12 @@
 
 /* Individual tile/section */
 .section {
-  max-width: 500px;
   width: 100%;
   height: 100%;
 
   overflow-y: auto;
   overflow-x: hidden;
-  border-color:rgb(53, 53, 53);
-  border-width: 2px;
-  border-style: solid;
-  border-radius: 5px;
+
   background: #111418;
   padding: 0;
   margin: 0;
@@ -72,7 +74,7 @@
 
 /* Table container */
 .incident-info {
-  width: 90%;
+  width: 100%;
   border-collapse: collapse;
   margin-top: 0;
   font-size: 0.7rem;

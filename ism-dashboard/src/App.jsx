@@ -8,8 +8,6 @@ import { PieChart, pieArcLabelClasses, legendClasses, chartsAxisClasses } from '
 
 function App() {
   const [incidents, setIncidents] = useState([]);
-  const [servicereq, setServicereq] = useState([]);
-  const [serviceCount, setServiceCount] = useState([]);
   const [incidents_esc, setIncidents_esc] = useState([]);
   const [activeinc, setActiveinc] = useState([]);
   const [resolvedinc, setResolvedinc] = useState([]);
@@ -87,43 +85,7 @@ function App() {
     }
   };
 
-  const fetchServiceReq = async () => {
-    const date = new Date();
-    setLastRefresh(date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds());
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get('http://localhost:5000/api/sr', {
-        params: { sid: sid }
-      });
-      const data = response.data.value || response.data;
-      // ✅ Filter only "active" service requests
-      // const active_data = data.filter((item) => item.Status === "Active" || item.Active === true);
-
-      const sorted = [...data].sort((a, b) => Number(b.ServiceReqNumber) - Number(a.ServiceReqNumber));
-      setServicereq(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
-      if (sorted.length > 0){
-        const c = {}
-        
-        response.data.value.forEach((inc) => {
-          const owner = inc.Owner;
-          c[owner] = (c[owner] || 0) + 1; // Initialize and increment count
-        });
-        setServiceCount(c)
-      }
-      else{
-        setServiceCount({})
-      }
-      
-    } catch (err) {
-      console.error('Error fetching sr:', err);
-      setError('Failed to fetch sr');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchEscIncidents = async () => {
+    const fetchEscIncidents = async () => {
     const date = new Date();
     setLastRefresh(date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds());
     setLoading(true);
@@ -285,7 +247,6 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchIncidents();
-      fetchServiceReq();
       fetchEscIncidents();
       fetchActiveIncidents();
       fetchResolvedperOwner();
@@ -298,7 +259,6 @@ function App() {
     if (isAuthenticated) {
       const interval = setInterval(() => {
         fetchIncidents();
-        fetchServiceReq();
         fetchEscIncidents();
         fetchActiveIncidents();
         fetchResolvedperOwner();
@@ -327,102 +287,71 @@ function App() {
       :
       <>
       <div className='top-element'>
-            {loading && <p>Loading service requests...</p>}
+            {loading && <p>Loading top element...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
 
             {!loading && !error && (
               <div className='topinfo'>
-                
+                <h3> Total W11 Queue: {totalW11}</h3>
                 
               </div>
             )}
       </div>
+
+
+       
       
       
       <div className="App">
         <div className='section'>
-          {loading && <p>Loading incidents...</p>}
+          <h2 className='section-title'>Resolved Tickets Today</h2>
+
+          {loading && <p>Loading Resolved Tickets...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
+
           {!loading && !error && (
             <>
-              <h2 className='section-title'>Unassigned Active W11 Incidents</h2>
-              <h3> Total W11 Queue: {totalW11}</h3>
+              <PieChart
               
-              <table className="incident-info">
-                <thead>
-                  <tr>
-                    <th>Incident</th>
-                    <th>Subject</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {incidents.map((incident) => (
-                    <tr key={incident.RecId}>
-                      <td><b>{incident.IncidentNumber}</b></td>
-                      <td>{incident.Subject}</td>
-                      <td>{incident.Status}</td>
-                      <td>{incident.Priority}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              series={[{ 
+                innerRadius: 60,
+                outerRadius: 120,
+                data: resolvedinc,
+                arcLabel: 'value',
+                paddingAngle: 5,
+                cornerRadius: 5
+                
+                }]}
+              sx={{
+                  [`& .${legendClasses.label}`]: {
+                    color:"white"
+                  },
+                  [`& .${pieArcLabelClasses.root}`]: {
+                    fill: 'white',   // 👈 your text color
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    border:'2px solid rgba(0, 0, 0, 0.1)',
+                    
+                  },
+                }}
+              height={300}
+              width={500}
+            />
             </>
           )}
         </div>
 
         <div className='section'>
-          <h2 className='section-title'>Service Requests</h2>
-          <span>Total: {servicereq.length}</span>
-
-          {loading && <p>Loading service requests...</p>}
+          <h2 className='section-title'>Next Available KR</h2>
+          {loading && <p>Loading KR...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
 
-          {!loading && !error && enableSRGraph ? (
-            <BarChart
-              xAxis={[
-                {
-                  id: 'barCategories',
-                  data: Object.keys(serviceCount),
-                }
-              ]}
-              series={[
-                {
-                  data: Object.values(serviceCount),
-                }
-              ]}
-              
-              height={300}
-            />
-          ):(
-            <>
-              <table className="incident-info">
-                <thead>
-                  <tr>
-                    <th>Service Req</th>
-                    <th>Subject</th>
-                    <th>Status</th>
-                    <th>Owner</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {servicereq.map((sr) => (
-                    <tr key={sr.RecId}>
-                      <td><b>{sr.ServiceReqNumber}</b></td>
-                      <td>{sr.Subject}</td>
-                      <td>{sr.Status}</td>
-                      <td>{sr.Owner}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-            
+          {!loading && !error && (
+            <h1>{latestCI} </h1>
           )}
-           <button className={enableSRGraph ? 'toggleSRGraph_active' : "toggleSRGraph"} onClick={() => (setSRGraph(!enableSRGraph))}>Toggle Graph</button>
-        
+          
         </div>
+        
 
         <div className='section'>
           <h2 className='section-title'>
@@ -466,97 +395,49 @@ function App() {
             </>
           )}
         </div>
+          <div className='section'>
+            <h2 className='section-title'>Team's Active Incidents by Owner</h2>
 
-        <div className='section'>
-          <h2 className='section-title'>Team's Active Incidents by Owner</h2>
-          {loading && <p>Loading Active Tickets...</p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          {/* //TODO if the amount of incidetns are over 20, make the bar amber, if 25 or over made it red  */}
-          {!loading && !error && 
-            <table>
-              <thead>
-                <tr>
-                  <th>Owner</th>
-                  <th>Active Incidents</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(activeinc).map(([key, value], index) => (
-                  <tr key={index}>
-                    <td>{key}</td>
-                    <td>{value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>        
-          }
-        </div>
+            {loading && <p>Loading Active Tickets...</p>}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
 
-        <div className='section'>
-          <h2 className='section-title'>Resolved Tickets Today</h2>
-
-          {loading && <p>Loading Resolved Tickets...</p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-
-          {!loading && !error && (
-            <>
-              <PieChart
-              
-              series={[{ innerRadius: 20, outerRadius: 60, data: resolvedinc, arcLabel: 'value' }]}
-              sx={{
-                  [`& .${legendClasses.label}`]: {
-                    color:"white"
-                  },
-                  [`& .${pieArcLabelClasses.root}`]: {
-                    fill: 'white',   // 👈 your text color
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    
-                  },
-                }}
-              height={150}
-              width={130}
-            />
-            </>
-          )}
-        </div>
-
-        <div className='section'>
-          <h2 className='section-title'>Next Available KR</h2>
-          {loading && <p>Loading KR...</p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-
-          {!loading && !error && (
-            <h1>{latestCI} </h1>
-          )}
-          
-        </div>
-
-        
-
-        {/* <div className='section'>
-          <h2>Ticket Priority</h2>
-          <span>Total: {servicereq.length}</span>
-
-          {loading && <p>Loading service requests...</p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-
-          {!loading && !error && (
-            <>
-              <PieChart
-              
-              series={[
+            
+            <BarChart
+              xAxis={[
                 {
-                  data: resolvedinc,
+                  scaleType: "band",
+                  data: Object.keys(activeinc),
+                  label: "Owner",
                 }
               ]}
-              
-              height={300}
+              series={[
+                {
+                  data: Object.values(activeinc),
+                  label: "Active Incidents",
+                  barLabel: true,
+                }
+              ]}
+              height={200}
+              width={600}
+              margin={{ top: 40, right: 20, bottom: 40, left: 60 }}
+
+              sx={{
+                "& .MuiChartsAxis-tickLabel": { fill: "white" },
+                "& .MuiChartsLegend-root": { color: "white" },
+              }}
+
             />
-            </>
-          )}
+            
+          </div>
+      
+
+        <div className='section'>
+          
         </div>
-         */}
+        
+        
+
+        
       </div>
       </>
   );
