@@ -3,8 +3,10 @@ import axios from 'axios';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
-import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart, pieArcLabelClasses, legendClasses, chartsAxisClasses } from '@mui/x-charts';
+
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList,Pie,Cell   } from 'recharts';
+import { fontSize } from '@mui/system';
 
 function App() {
   const [incidents, setIncidents] = useState([]);
@@ -14,6 +16,7 @@ function App() {
   const [priorityCounts, setpriorityCounts] = useState([]);
   const [latestCI, setLatestCI] = useState(null);
   const [totalW11, setTotalW11] = useState(null)
+  const [igelDeviceStatus,setIgelDeviceStatus] = useState([])
 
 
   const [loading, setLoading] = useState(false);
@@ -23,18 +26,28 @@ function App() {
   const [enableSRGraph, setSRGraph] = useState(false)
   const [isAuthenticated, setIsAuthentication] = useState(false);
   const itemsPerPage = 10;
-  const [sid, setSid] = useState("");
+  const coloredData = igelDeviceStatus.map((item) => ({
+    ...item,
+    color: item.name === 'Online' ? '#4caf50' : '#f44336', // green/red
+  }));
+  const [ismSID, setISMSID] = useState("");
+  const [igelsid, setIGELSID] = useState("");
 
   
 
   const sendSID = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/incidents', {
-        params: { sid: sid }
+      const ISMresponse = await axios.get('http://localhost:5000/api/incidents', {
+        params: { sid: ismSID }
       });
-      if (response.status === 200) {
-        localStorage.setItem("SID", sid);
-        setSid(sid);
+      const IGELResponse = await axios.get('http://localhost:5000/UMSapi/', {
+        params: { sid: igelsid }
+      });
+      if (ISMresponse.status === 200 && IGELResponse.status === 200) {
+        localStorage.setItem("ismSID", ismSID);
+        localStorage.setItem("igelSID", igelsid);
+        setISMSID(ismSID);
+        setIGELSID(igelsid);
         setIsAuthentication(true);
       } else {
         setError("Invalid SID");
@@ -42,7 +55,7 @@ function App() {
       }
     } catch (err) {
       console.error(err);
-      setError("Login failed. Please check SID or server.");
+      setError("Login failed. Please check ismSID or server.");
     }
   };
 
@@ -92,7 +105,7 @@ function App() {
     setError(null);
     try {
       const response = await axios.get('http://localhost:5000/api/incidents_esc', {
-        params: { sid: sid }
+        params: { sid: ismSID }
       });
       const data = response.data.value || response.data;
       const sorted = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
@@ -112,20 +125,27 @@ function App() {
     setError(null);
     try {
       await axios.get('http://localhost:5000/api/activeIncidents', {
-        params: { sid: sid }
+        params: { sid: ismSID }
       })
       .then((res) => {
-        const c = {};
-  
+       const entry = {};
+
+        // Count occurrences per Owner
         res.data.value.forEach((inc) => {
           const owner = inc.Owner;
-          c[owner] = (c[owner] || 0) + 1; // Initialize and increment count
+          entry[owner] = (entry[owner] || 0) + 1;
         });
 
-        
+        // Convert to Recharts format
+        const activedata = Object.entries(entry).map(([key, value]) => ({
+          name: key,
+          pv: value,
+        }));
 
-        setActiveinc(c);
-        console.log("Counts:", c); // log the built dictionary directly
+        setActiveinc(activedata);
+
+        console.log("Counts:", activedata);
+
       })
     } catch (err) {
       console.error('Error fetching active incidents:', err);
@@ -144,7 +164,7 @@ function App() {
       const date_obj = new Date()
       const new_date = date_obj.getFullYear()+"-"+(date_obj.getMonth()+1).toString().padStart(2,0)+"-"+date_obj.getDate().toString().padStart(2,0)
       const response = await axios.get('http://localhost:5000/api/resolved_incidents_today', {
-        params: { sid: sid, date:new_date }
+        params: { sid: ismSID, date:new_date }
       });
       const ownerRes = {}
       const ownerData = response.data.value || {}
@@ -176,11 +196,10 @@ function App() {
   };
 
   const fetchLatestCI = async () => {
-    setLoading(true);
-    setError(null);
+
     try {
       const response = await axios.get('http://localhost:5000/api/latest_CI', {
-        params: { sid: sid }
+        params: { sid: ismSID }
       });
       
       
@@ -211,7 +230,7 @@ function App() {
     setError(null);
     try {
       const response = await axios.get('http://localhost:5000/api/CIbyOS', {
-        params: { sid: sid },
+        params: { sid: ismSID },
       });
       const data = response.data
       console.log(data)
@@ -224,17 +243,53 @@ function App() {
     }
 };
 
+  const fetchDeviceStatus = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:5000/UMSapi/getDeviceStatus', {
+        params: { sid: igelsid },
+      });
+      
+      const devices = response.data || [];
+
+      // Count total online and offline devices
+      let onlineCount = 0;
+      let offlineCount = 0;
+
+      devices.forEach((device) => {
+        if (device.online) onlineCount += 1;
+        else offlineCount += 1;
+      });
+
+      // Prepare chart data for PieChart
+      const chartData = [
+        { name: 'Online', value: onlineCount },
+        { name: 'Offline', value: offlineCount },
+      ];
+      console.log(chartData)
+
+      setIgelDeviceStatus(chartData);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to fetch device status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
  
   
 
 
   useEffect(() => {
-    const response = axios.get('http://localhost:5000/api/incidents', {
-      params: { sid: localStorage.getItem("SID") }
+    axios.get('http://localhost:5000/api/incidents', {
+      params: { sid: localStorage.getItem("ismSID") }
       }).then((res)=>{
       if (res.status === 200) {
-        setSid(localStorage.getItem("SID"))
+        setISMSID(localStorage.getItem("ismSID"))
         setIsAuthentication(true);
     
       } else {
@@ -252,20 +307,25 @@ function App() {
       fetchResolvedperOwner();
       fetchLatestCI();
       fetchCIbyOS();
+      fetchDeviceStatus();
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
-      const interval = setInterval(() => {
+      const interval1 = setInterval(() => {
         fetchIncidents();
         fetchEscIncidents();
         fetchActiveIncidents();
+        fetchCIbyOS();
+      }, 300000); // refreshes every 5 minutes (60,000ms * 5)
+      const interval2 = setInterval(() => {
         fetchResolvedperOwner();
         fetchLatestCI();
-        fetchCIbyOS();
-      }, 60000);
-      return () => clearInterval(interval);
+        fetchDeviceStatus();
+      }, 30000); // refreshes every 30 seconds 
+      return () => clearInterval(interval1,interval2);
+      
     }
   }, [isAuthenticated]);
 
@@ -273,13 +333,23 @@ function App() {
   return (
     !isAuthenticated ?
       <div className="login-container">
-        <h2>Login</h2>
+        <h2>ISM SID</h2>
         <input
           id="SID-input"
           type="text"
           placeholder="Enter SID"
-          value={sid}
-          onChange={(e) => setSid(e.target.value)}
+          value={ismSID}
+          onChange={(e) => setISMSID(e.target.value)}
+        />
+        
+
+        <h2>IGEL UMS Login</h2>
+        <input
+          id="SID-input"
+          type="text"
+          placeholder="Enter SID"
+          value={igelsid}
+          onChange={(e) => setIGELSID(e.target.value)}
         />
         <button onClick={sendSID}>Log In</button>
         {error && <p style={{ color: "red" }}>{error}</p>}
@@ -324,33 +394,25 @@ function App() {
                 }]}
               sx={{
                   [`& .${legendClasses.label}`]: {
-                    color:"white"
+                    color:"white",
+                    fontSize:20
                   },
                   [`& .${pieArcLabelClasses.root}`]: {
                     fill: 'white',   // 👈 your text color
-                    fontSize: 20,
+                    fontSize: 30,
                     fontWeight: 'bold',
                     border:'2px solid rgba(0, 0, 0, 0.1)',
                     
                   },
                 }}
               height={300}
-              width={500}
+              width={400}
             />
             </>
           )}
         </div>
 
-        <div className='section'>
-          <h2 className='section-title'>Next Available KR</h2>
-          {loading && <p>Loading KR...</p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-
-          {!loading && !error && (
-            <h1>{latestCI} </h1>
-          )}
-          
-        </div>
+        
         
 
         <div className='section'>
@@ -358,11 +420,8 @@ function App() {
             Escalated W11 Incidents
             <p>Total: {incidents_esc.length}</p>
           </h2>
-          
-
           {loading && <p>Loading escalated incidents...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
-
           {!loading && !error && (
             <>
               <table className="incident-info">
@@ -370,10 +429,7 @@ function App() {
                   <tr>
                     <th>Incident</th>
                     <th>Subject</th>
-                    <th>Status</th>
-                    <th>Priority</th>
                     <th>Owner</th>
-                    <th>Last Changed</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -381,13 +437,7 @@ function App() {
                     <tr key={incident.RecId}>
                       <td><b>{incident.IncidentNumber}</b></td>
                       <td>{incident.Subject}</td>
-                      <td>{incident.Status}</td>
-                      <td>{incident.Priority}</td>
                       <td>{incident.Owner}</td>
-                      <td>
-                        <p>{incident.LastModDateTime.split("T")[0]}</p>
-                        <p>{incident.LastModDateTime.split("T")[1].split("Z")[0].split("+")[0]}</p>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -395,49 +445,93 @@ function App() {
             </>
           )}
         </div>
-          <div className='section'>
+         
+
+        
+
+        <div className="section">
+              <h2 className="section-title">IGEL Device Status</h2>
+              {loading && <p>Loading device status...</p>}
+              {error && <p style={{ color: 'red' }}>{error}</p>}
+              {!loading && !error && igelDeviceStatus.length > 0 && (
+                <PieChart
+                  series={[
+                    {
+                      innerRadius: 60,
+                      outerRadius: 120,
+                      data: coloredData,
+                      arcLabel: 'value', // shows the value on the arcs
+                      paddingAngle: 5,
+                      cornerRadius: 5,
+                    },
+                  ]}
+                  sx={{
+                    [`& .${legendClasses.label}`]: {
+                      color: 'white',   // legend text color
+                      fontSize: 18,
+                    },
+                    [`& .${pieArcLabelClasses.root}`]: {
+                      fill: 'white',    // arc label color
+                      fontSize: 24,
+                      fontWeight: 'bold',
+                    },
+                  }}
+                  height={300}
+                  width={400}
+                >
+                  <Legend 
+                    position="bottom" 
+                    sx={{ color: 'white', fontSize: 30 }}
+                  />
+                </PieChart>
+              )}
+            </div>
+         <div className='section'>
             <h2 className='section-title'>Team's Active Incidents by Owner</h2>
 
             {loading && <p>Loading Active Tickets...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
-
             
             <BarChart
-              xAxis={[
-                {
-                  scaleType: "band",
-                  data: Object.keys(activeinc),
-                  label: "Owner",
-                }
-              ]}
-              series={[
-                {
-                  data: Object.values(activeinc),
-                  label: "Active Incidents",
-                  barLabel: true,
-                }
-              ]}
+              width={700}
               height={200}
-              width={600}
-              margin={{ top: 40, right: 20, bottom: 40, left: 60 }}
-
-              sx={{
-                "& .MuiChartsAxis-tickLabel": { fill: "white" },
-                "& .MuiChartsLegend-root": { color: "white" },
-              }}
-
-            />
+              data={activeinc}
+              margin={{ top: 20, right: 20, left: 0, bottom: 20 }}
+            >
+              {/* Make grid lines subtle for dark mode */}
+              <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+              
+              {/* X-axis & Y-axis styling */}
+              <XAxis dataKey="name" stroke="#fff" fontSize={15} angle={-10}/>
+              <YAxis stroke="#fff" />
+              
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#222', borderColor: '#555', color: '#fff' }} 
+                itemStyle={{ color: '#fff' }}
+              />
+              
+              <Legend wrapperStyle={{ color: '#fff' }} />
+              
+              {/* Bar with values displayed on top */}
+              <Bar dataKey="pv" barSize={30} fill="#ff4d2eff">
+                <LabelList dataKey="pv" position="top" fill="#fff" fontSize={20} />
+              </Bar>
+            </BarChart>
+            
             
           </div>
-      
-
+        
+        
         <div className='section'>
+          <h2 className='section-title'>Next Available KR</h2>
+          {loading && <p>Loading KR...</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+
+          {!loading && !error && (
+            <h1 style={{fontSize:"75px"}}>{latestCI} </h1>
+          )}
           
         </div>
-        
-        
-
-        
       </div>
       </>
   );

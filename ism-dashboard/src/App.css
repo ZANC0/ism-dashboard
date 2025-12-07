@@ -1,6 +1,6 @@
 /* Root container */
 #root {
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   text-align: center;
   background: #0d0d0d;
@@ -19,7 +19,7 @@
   display: grid;
 
   /* responsive grid, tiles fill around first cell */
-  grid-template-columns: 2fr repeat(2, 1fr);
+  grid-template-columns: 1fr repeat(2, 1fr);
   grid-template-rows: 2fr 1fr;
   grid-column-gap: 0px;
   grid-row-gap: 0px;
@@ -67,17 +67,17 @@
   background-color: inherit;
   padding:10px auto;
   width: 100%;
-  font-size: 1rem;
+  font-size: 1.5rem;
 }
 
 
 
 /* Table container */
 .incident-info {
-  width: 100%;
+  width: 90%;
   border-collapse: collapse;
   margin-top: 0;
-  font-size: 0.7rem;
+  font-size: 1.25rem;
   background-color: #111418;
   border-radius: 10px;
   overflow: hidden;

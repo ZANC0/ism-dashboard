@@ -180,7 +180,47 @@ app.get('/api/CIbyOS', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch lastest CI' });
   }
 });
+app.get('/UMSapi/', async (req, res) => {
+  try {
+    const sid = req.query.sid
+    // Active Windows 11 Incidents
+    const response = await axios.get(
+      "https://10.51.84.159:8443/umsapi/v3/thinclients?facets=online",
+      {
+        headers: {
+          Cookie: `JSESSIONID=${sid}` // your SID
+        },
+        // use agent to ignore SSL errors
+        httpsAgent, // use agent to ignore SSL errors
+      }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error fetching getDeviceStatus from USM API:', err.message);
+    res.status(500).json({ error: 'Error fetching getDeviceStatus from USM API' });
+  }
+});
 
+app.get('/UMSapi/getDeviceStatus', async (req, res) => {
+  try {
+    const sid = req.query.sid
+    // Active Windows 11 Incidents
+    const response = await axios.get(
+      "https://10.51.84.159:8443/umsapi/v3/thinclients?facets=online",
+      {
+        headers: {
+          Cookie: `JSESSIONID=${sid}` // your SID
+        },
+        // use agent to ignore SSL errors
+        httpsAgent, // use agent to ignore SSL errors
+      }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error fetching getDeviceStatus from USM API:', err.message);
+    res.status(500).json({ error: 'Error fetching getDeviceStatus from USM API' });
+  }
+});
 
 
 
