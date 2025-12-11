@@ -31,7 +31,9 @@ function App() {
     color: item.name === 'Online' ? '#4caf50' : '#f44336', // green/red
   }));
   const [ismSID, setISMSID] = useState("");
-  const [igelsid, setIGELSID] = useState("");
+  const [igelusername, setIgelusername] = useState("");
+  const [igelpword, setigelpword] = useState("");
+  const [igelsid, setigelsid] = useState("");
 
   
 
@@ -40,14 +42,14 @@ function App() {
       const ISMresponse = await axios.get('http://localhost:5000/api/incidents', {
         params: { sid: ismSID }
       });
-      const IGELResponse = await axios.get('http://localhost:5000/UMSapi/', {
-        params: { sid: igelsid }
+      const IGELResponse = await axios.post('http://localhost:5000/UMSapi', {
+        username: igelusername,
+        password: igelpword 
       });
       if (ISMresponse.status === 200 && IGELResponse.status === 200) {
         localStorage.setItem("ismSID", ismSID);
-        localStorage.setItem("igelSID", igelsid);
-        setISMSID(ismSID);
-        setIGELSID(igelsid);
+        localStorage.setItem("igelSID", IGELResponse.data.message);
+        setigelsid(IGELResponse.data.message);
         setIsAuthentication(true);
       } else {
         setError("Invalid SID");
@@ -66,7 +68,7 @@ function App() {
     setError(null);
     try {
       const response = await axios.get('http://localhost:5000/api/incidents', {
-        params: { sid: sid }
+        params: { sid: ismSID }
       });
       const data = response.data.value || response.data;
       const sorted = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
@@ -74,7 +76,7 @@ function App() {
       
     
     const responsew11 = await axios.get('http://localhost:5000/api/W11Q', {
-        params: { sid: sid }
+        params: { sid: ismSID }
       });
     setTotalW11(responsew11.data.value.length)
     
@@ -246,6 +248,7 @@ function App() {
   const fetchDeviceStatus = async () => {
     setLoading(true);
     setError(null);
+    console.log("SID REACT:",igelsid)
     try {
       const response = await axios.get('http://localhost:5000/UMSapi/getDeviceStatus', {
         params: { sid: igelsid },
@@ -290,6 +293,7 @@ function App() {
       }).then((res)=>{
       if (res.status === 200) {
         setISMSID(localStorage.getItem("ismSID"))
+        setigelsid(localStorage.getItem("igelSID"))
         setIsAuthentication(true);
     
       } else {
@@ -345,11 +349,18 @@ function App() {
 
         <h2>IGEL UMS Login</h2>
         <input
-          id="SID-input"
+          id="IGELUSERNAME"
           type="text"
           placeholder="Enter SID"
-          value={igelsid}
-          onChange={(e) => setIGELSID(e.target.value)}
+          value={igelusername}
+          onChange={(e) => setIgelusername(e.target.value)}
+        />
+        <input
+          id="IGELPWORD"
+          type="password"
+          placeholder="Enter SID"
+          value={igelpword}
+          onChange={(e) => setigelpword(e.target.value)}
         />
         <button onClick={sendSID}>Log In</button>
         {error && <p style={{ color: "red" }}>{error}</p>}
@@ -357,10 +368,9 @@ function App() {
       :
       <>
       <div className='top-element'>
-            {loading && <p>Loading top element...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
 
-            {!loading && !error && (
+            {!error && (
               <div className='topinfo'>
                 <h3> Total W11 Queue: {totalW11}</h3>
                 
@@ -375,11 +385,9 @@ function App() {
       <div className="App">
         <div className='section'>
           <h2 className='section-title'>Resolved Tickets Today</h2>
-
-          {loading && <p>Loading Resolved Tickets...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
 
-          {!loading && !error && (
+          {!error && (
             <>
               <PieChart
               
@@ -420,9 +428,8 @@ function App() {
             Escalated W11 Incidents
             <p>Total: {incidents_esc.length}</p>
           </h2>
-          {loading && <p>Loading escalated incidents...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
-          {!loading && !error && (
+          {!error && (
             <>
               <table className="incident-info">
                 <thead>
@@ -451,9 +458,8 @@ function App() {
 
         <div className="section">
               <h2 className="section-title">IGEL Device Status</h2>
-              {loading && <p>Loading device status...</p>}
               {error && <p style={{ color: 'red' }}>{error}</p>}
-              {!loading && !error && igelDeviceStatus.length > 0 && (
+              {!error && igelDeviceStatus.length > 0 && (
                 <PieChart
                   series={[
                     {
@@ -489,7 +495,6 @@ function App() {
          <div className='section'>
             <h2 className='section-title'>Team's Active Incidents by Owner</h2>
 
-            {loading && <p>Loading Active Tickets...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
             
             <BarChart
@@ -524,10 +529,9 @@ function App() {
         
         <div className='section'>
           <h2 className='section-title'>Next Available KR</h2>
-          {loading && <p>Loading KR...</p>}
           {error && <p style={{ color: 'red' }}>{error}</p>}
 
-          {!loading && !error && (
+          {!error && (
             <h1 style={{fontSize:"75px"}}>{latestCI} </h1>
           )}
           

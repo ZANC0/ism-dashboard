@@ -180,36 +180,51 @@ app.get('/api/CIbyOS', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch lastest CI' });
   }
 });
-app.get('/UMSapi/', async (req, res) => {
+
+app.post('/UMSapi', async (req, res) => {
   try {
-    const sid = req.query.sid
-    // Active Windows 11 Incidents
-    const response = await axios.get(
-      "https://10.51.84.159:8443/umsapi/v3/thinclients?facets=online",
+    const username = req.body.username;
+    const password = req.body.password;
+    console.log(username)
+
+    // Create HTTPS agent to allow self-signed cert
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false
+    });
+
+    const response = await axios.post(
+      "https://10.51.84.159:8443/umsapi/v3/login",
       {
-        headers: {
-          Cookie: `JSESSIONID=${sid}` // your SID
+        
+      },
+      {
+        httpsAgent,
+        auth:{
+          username: username,
+          password: password
         },
-        // use agent to ignore SSL errors
-        httpsAgent, // use agent to ignore SSL errors
+        headers: { "Content-Type": "application/json" }
       }
     );
+
     res.json(response.data);
+
   } catch (err) {
-    console.error('Error fetching getDeviceStatus from USM API:', err.message);
-    res.status(500).json({ error: 'Error fetching getDeviceStatus from USM API' });
+    console.error('Error fetching login details from UMS API:', err.message);
+    res.status(500).json({ error: 'Error fetching login details from UMS API' });
   }
 });
 
 app.get('/UMSapi/getDeviceStatus', async (req, res) => {
   try {
     const sid = req.query.sid
+    console.log(sid)
     // Active Windows 11 Incidents
     const response = await axios.get(
       "https://10.51.84.159:8443/umsapi/v3/thinclients?facets=online",
       {
         headers: {
-          Cookie: `JSESSIONID=${sid}` // your SID
+          Cookie: sid, // your SID
         },
         // use agent to ignore SSL errors
         httpsAgent, // use agent to ignore SSL errors
