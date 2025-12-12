@@ -17,6 +17,7 @@ function App() {
   const [latestCI, setLatestCI] = useState(null);
   const [totalW11, setTotalW11] = useState(null)
   const [igelDeviceStatus,setIgelDeviceStatus] = useState([])
+  const [stockCount, setStockCount] = useState([])
 
 
   const [loading, setLoading] = useState(false);
@@ -227,15 +228,15 @@ function App() {
     }
 };
 
-  const fetchCIbyOS = async () => {
+  const fetchStockCount = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://localhost:5000/api/CIbyOS', {
-        params: { sid: ismSID },
+      const kr = "kr00"
+      const response = await axios.get('http://localhost:5000/api/CIs', {
+        params: { sid: ismSID, kr: kr },
       });
-      const data = response.data
-      console.log(data)
+      setStockCount(response)
 
     } catch (err) {
       console.error('Error fetching latest CI:', err);
@@ -248,7 +249,6 @@ function App() {
   const fetchDeviceStatus = async () => {
     setLoading(true);
     setError(null);
-    console.log("SID REACT:",igelsid)
     try {
       const response = await axios.get('http://localhost:5000/UMSapi/getDeviceStatus', {
         params: { sid: igelsid },
@@ -270,37 +270,45 @@ function App() {
         { name: 'Online', value: onlineCount },
         { name: 'Offline', value: offlineCount },
       ];
-      console.log(chartData)
 
       setIgelDeviceStatus(chartData);
     } catch (err) {
-      console.error(err);
-      setError('Failed to fetch device status');
+      console.error("Failed to fetch device status",err);
     } finally {
       setLoading(false);
     }
   };
 
+  const checkAuth = async () => {
+    try {
+      const ISMresponse = await axios.get('http://localhost:5000/api/incidents', {
+        params: { sid: localStorage.getItem("ismSID") }
+      });
+      const IGELResponse = await axios.get('http://localhost:5000/UMSapi/getDeviceStatus', {
+        params: { sid: localStorage.getItem("igelSID") },
+      });
+      
+      if(ISMresponse.status == 200 && IGELResponse.status == 200){
+        setigelsid(localStorage.getItem("igelSID"))
+        setISMSID(localStorage.getItem("ismSID"))
+        setIsAuthentication(true)
+      } else{
+        localStorage.clear("igelSID")
+        localStorage.clear("ismSID")
+        setIsAuthentication(false)
+      }
 
-
- 
+    } catch (err) {
+      console.error('Please log in, session expired:', err);
+    } finally {
+      setLoading(false);
+    }
+};
   
 
-
+// CHECK SID AUTH
   useEffect(() => {
-    axios.get('http://localhost:5000/api/incidents', {
-      params: { sid: localStorage.getItem("ismSID") }
-      }).then((res)=>{
-      if (res.status === 200) {
-        setISMSID(localStorage.getItem("ismSID"))
-        setigelsid(localStorage.getItem("igelSID"))
-        setIsAuthentication(true);
-    
-      } else {
-        setError("Invalid SID");
-        setIsAuthentication(false);
-      }
-    })
+    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -310,7 +318,7 @@ function App() {
       fetchActiveIncidents();
       fetchResolvedperOwner();
       fetchLatestCI();
-      fetchCIbyOS();
+      fetchStockCount();
       fetchDeviceStatus();
     }
   }, [isAuthenticated]);
@@ -321,7 +329,7 @@ function App() {
         fetchIncidents();
         fetchEscIncidents();
         fetchActiveIncidents();
-        fetchCIbyOS();
+        fetchStockCount();
       }, 300000); // refreshes every 5 minutes (60,000ms * 5)
       const interval2 = setInterval(() => {
         fetchResolvedperOwner();
@@ -392,8 +400,8 @@ function App() {
               <PieChart
               
               series={[{ 
-                innerRadius: 60,
-                outerRadius: 120,
+                innerRadius: 50,
+                outerRadius: 100,
                 data: resolvedinc,
                 arcLabel: 'value',
                 paddingAngle: 5,
@@ -403,18 +411,18 @@ function App() {
               sx={{
                   [`& .${legendClasses.label}`]: {
                     color:"white",
-                    fontSize:20
+                    fontSize:15
                   },
                   [`& .${pieArcLabelClasses.root}`]: {
                     fill: 'white',   // 👈 your text color
-                    fontSize: 30,
+                    fontSize: 25,
                     fontWeight: 'bold',
                     border:'2px solid rgba(0, 0, 0, 0.1)',
                     
                   },
                 }}
               height={300}
-              width={400}
+              width={250}
             />
             </>
           )}
@@ -425,7 +433,7 @@ function App() {
 
         <div className='section'>
           <h2 className='section-title'>
-            Escalated W11 Incidents
+            Escalated Incidents
             <p>Total: {incidents_esc.length}</p>
           </h2>
           {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -463,8 +471,8 @@ function App() {
                 <PieChart
                   series={[
                     {
-                      innerRadius: 60,
-                      outerRadius: 120,
+                      innerRadius: 40,
+                      outerRadius: 90,
                       data: coloredData,
                       arcLabel: 'value', // shows the value on the arcs
                       paddingAngle: 5,
@@ -482,8 +490,8 @@ function App() {
                       fontWeight: 'bold',
                     },
                   }}
-                  height={300}
-                  width={400}
+                  height={200}
+                  width={300}
                 >
                   <Legend 
                     position="bottom" 
@@ -492,21 +500,21 @@ function App() {
                 </PieChart>
               )}
             </div>
-         <div className='section'>
+         {/* <div className='section'>
             <h2 className='section-title'>Team's Active Incidents by Owner</h2>
 
             {error && <p style={{ color: 'red' }}>{error}</p>}
             
             <BarChart
-              width={700}
-              height={200}
+              width={450}
+              height={150}
               data={activeinc}
               margin={{ top: 20, right: 20, left: 0, bottom: 20 }}
             >
-              {/* Make grid lines subtle for dark mode */}
+              
               <CartesianGrid stroke="#444" strokeDasharray="3 3" />
               
-              {/* X-axis & Y-axis styling */}
+              
               <XAxis dataKey="name" stroke="#fff" fontSize={15} angle={-10}/>
               <YAxis stroke="#fff" />
               
@@ -517,15 +525,12 @@ function App() {
               
               <Legend wrapperStyle={{ color: '#fff' }} />
               
-              {/* Bar with values displayed on top */}
               <Bar dataKey="pv" barSize={30} fill="#ff4d2eff">
                 <LabelList dataKey="pv" position="top" fill="#fff" fontSize={20} />
               </Bar>
             </BarChart>
-            
-            
           </div>
-        
+         */}
         
         <div className='section'>
           <h2 className='section-title'>Next Available KR</h2>
@@ -533,6 +538,19 @@ function App() {
 
           {!error && (
             <h1 style={{fontSize:"75px"}}>{latestCI} </h1>
+          )}
+          
+        </div>
+        <div className='section'>
+          <h2 className='section-title'>Inventory</h2>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+
+          {!error && (
+            <>
+            {stockCount.map((ci) => (
+                <p><b>{ci}</b></p>
+            ))} 
+            </>
           )}
           
         </div>

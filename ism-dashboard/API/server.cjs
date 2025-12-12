@@ -84,7 +84,7 @@ app.get('/api/incidents_esc', async (req, res) => {
   try {
     const sid = req.query.sid
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=CE_Escalated eq true and (OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and Status eq 'Active'&$top=100",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and CE_Escalated eq true and Status eq 'Active'&$top=100",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -161,12 +161,13 @@ app.get('/api/latest_CI', async (req, res) => {
   }
 });
 
-app.get('/api/CIbyOS', async (req, res) => {
+app.get('/api/Cis', async (req, res) => {
   try {
     const sid = req.query.sid
+    const kr = req.query.kr
     // Active Windows 11 Incidents
-    const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$select=OperatingSystem&$top=100",
+    const total_res = await axios.get(
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$select=Name, Model, Status&$orderby=Name&$search=KR000",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -174,7 +175,7 @@ app.get('/api/CIbyOS', async (req, res) => {
         httpsAgent, // use agent to ignore SSL errors
       }
     );
-    res.json(response.data);
+    res.json(total_res.data)
   } catch (err) {
     console.error('Error fetching lastest CI from server:', err.message);
     res.status(500).json({ error: 'Failed to fetch lastest CI' });
@@ -218,7 +219,6 @@ app.post('/UMSapi', async (req, res) => {
 app.get('/UMSapi/getDeviceStatus', async (req, res) => {
   try {
     const sid = req.query.sid
-    console.log(sid)
     // Active Windows 11 Incidents
     const response = await axios.get(
       "https://10.51.84.159:8443/umsapi/v3/thinclients?facets=online",
