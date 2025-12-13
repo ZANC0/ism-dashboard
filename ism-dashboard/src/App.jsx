@@ -1,4 +1,4 @@
-import { useState, useEffect, use, act } from 'react';
+import { useState, useEffect, use, act, useMemo } from 'react';
 import axios from 'axios';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
@@ -227,24 +227,60 @@ function App() {
       setLoading(false);
     }
 };
-
   const fetchStockCount = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const kr = "kr00"
-      const response = await axios.get('http://localhost:5000/api/CIs', {
-        params: { sid: ismSID, kr: kr },
-      });
-      setStockCount(response)
+  setLoading(true);
+  setError(null);
 
-    } catch (err) {
-      console.error('Error fetching latest CI:', err);
-      setError('Failed to fetch latest CI');
-    } finally {
-      setLoading(false);
+  const batchSize = 1;
+  const maxKr = 34;
+
+  let allResults = [];
+
+  try {
+    // Start at KR00100, KR00200, ..., KR03400
+    for (let start = 0; start <= maxKr; start += batchSize) {
+      const kr = `KR${String(start).padStart(3, "0")}`;
+      console.log(kr,"APPS")
+      const response = await axios.get("http://localhost:5000/api/CIs", {
+        params: {
+          sid: ismSID,
+          kr: kr
+        }
+      });
+
+      const results = response.data?.value || [];
+
+      console.log(`Fetched ${results.length} CIs for ${kr}`);
+
+      allResults.push(...results);
+
+      // Safety exit if no results returned
+      if (results.length === 0) break;
     }
+    
+    const map = new Map();
+
+    for (let i = 0; i < allResults.length; i++) {
+      const model = allResults[i].Model ?? "Unknown";
+      map.set(model, (map.get(model) || 0) + 1);
+    }
+
+    
+    
+    console.log("Finished fetching all CIs");
+    console.log("Total CIs fetched:", allResults.length);
+    setStockCount(map)
+    console.log(map)
+
+  } catch (err) {
+    console.error("Error fetching CIs:", err);
+    setError("Failed to fetch CI list");
+  } finally {
+    setLoading(false);
+  }
 };
+
+
 
   const fetchDeviceStatus = async () => {
     setLoading(true);
@@ -329,13 +365,15 @@ function App() {
         fetchIncidents();
         fetchEscIncidents();
         fetchActiveIncidents();
-        fetchStockCount();
-      }, 300000); // refreshes every 5 minutes (60,000ms * 5)
+      }, 60000); // refreshes every 5 minutes (60,000ms * 5)
       const interval2 = setInterval(() => {
         fetchResolvedperOwner();
         fetchLatestCI();
         fetchDeviceStatus();
-      }, 30000); // refreshes every 30 seconds 
+      }, 30000);
+      const interval3 = setInterval(() => {
+        fetchStockCount()
+      }, 300000); // refreshes every 30 seconds 
       return () => clearInterval(interval1,interval2);
       
     }
@@ -544,12 +582,16 @@ function App() {
         <div className='section'>
           <h2 className='section-title'>Inventory</h2>
           {error && <p style={{ color: 'red' }}>{error}</p>}
-
+          {loading && <p style={{color: 'white'}}>Loading Stock counts...</p>}
           {!error && (
             <>
-            {stockCount.map((ci) => (
-                <p><b>{ci}</b></p>
-            ))} 
+            
+            {Array.from(stockCount.entries()).map(([key, value]) => (
+              <p key={key}>
+                <b>{key}</b>: {value}
+              </p>
+            ))}
+
             </>
           )}
           

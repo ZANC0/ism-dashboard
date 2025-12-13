@@ -167,7 +167,7 @@ app.get('/api/Cis', async (req, res) => {
     const kr = req.query.kr
     // Active Windows 11 Incidents
     const total_res = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$select=Name, Model, Status&$orderby=Name&$search=KR000",
+      `https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$select=Name, Model, Status&$orderby=Name&$search=${kr}&$top=100`,
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
