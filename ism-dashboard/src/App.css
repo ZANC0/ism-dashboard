@@ -188,3 +188,13 @@
   color: #0f172a;
   border-color: #bae6fd;
 }
+
+
+.loginLoading{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  font-size: 25px;
+  color:"white"
+}

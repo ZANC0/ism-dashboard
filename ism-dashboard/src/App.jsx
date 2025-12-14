@@ -24,12 +24,15 @@ function App() {
   const [igelDeviceStatus,setIgelDeviceStatus] = useState([])
   const [stockCount, setStockCount] = useState([])
 
-
+  // Loading States
   const [loading, setLoading] = useState(false);
-  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginLoading, setLoginLoading] = useState([false, ""])
+  const [stockLoading, setStockLoading] = useState(true)
   const [error, setError] = useState(null);
-  const [lastRefresh, setLastRefresh] = useState(null);
   const [isAuthenticated, setIsAuthentication] = useState(false);
+
+  const [lastRefresh, setLastRefresh] = useState(null);
+  
   const itemsPerPage = 10;
   const coloredData = igelDeviceStatus.map((item) => ({
     ...item,
@@ -44,15 +47,16 @@ function App() {
 
   const sendSID = async () => {
     try {
-      setLoginLoading(true)
+      setLoginLoading([true, "Testing ISM SID"])
       const ISMresponse = await axios.get('http://localhost:5000/api/incidents', {
         params: { sid: ismSID }
       });
+      setLoginLoading([true, "Validating IGEL Credentdials"])
       const IGELResponse = await axios.post('http://localhost:5000/UMSapi', {
         username: igelusername,
         password: igelpword 
       });
-      setLoginLoading(false)
+      setLoginLoading(false, "")
       if (ISMresponse.status === 200 && IGELResponse.status === 200) {
         localStorage.setItem("ismSID", ismSID);
         localStorage.setItem("igelSID", IGELResponse.data.message);
@@ -235,7 +239,8 @@ function App() {
 };
   const fetchStockCount = async () => {
   // TODO Edit the fetching stock method from search for each set of 100 KRs, configure the api to search the quantity of each model
-  setLoading(true);
+  
+  setStockLoading(true)
   setError(null);
 
   const batchSize = 1;
@@ -247,7 +252,6 @@ function App() {
     // Start at KR00100, KR00200, ..., KR03400
     for (let start = 0; start <= maxKr; start += batchSize) {
       const kr = `KR${String(start).padStart(3, "0")}`;
-      console.log(kr,"APPS")
       const response = await axios.get("http://localhost:5000/api/CIs", {
         params: {
           sid: ismSID,
@@ -275,7 +279,7 @@ function App() {
       model,
       quantity,
     }));
-
+    setStockLoading(false);
     setStockCount(dataset)
     console.log(dataset)
     
@@ -389,10 +393,12 @@ function App() {
 
 
   return (
-    loginLoading ? 
-    (<>
-    loading
-    </>)
+    loginLoading[0] ? 
+    (
+      <div className='loginLoading'>
+        {loginLoading[1]}
+      </div>
+    )
     :
     !isAuthenticated ?
       <div className="login-container">
@@ -593,9 +599,9 @@ function App() {
           
         </div>
         <div className='section'>
-          <h2 className='section-title'>Inventory</h2>
+          <h2 className='section-title'>Hardware Stock</h2>
           {error && <p style={{ color: 'red' }}>{error}</p>}
-          {loading && <p style={{color: 'white'}}>Loading Stock counts...</p>}
+          {stockLoading && <p style={{color: 'white'}}>Loading Stock counts...</p>}
           {!error && (
           <BarChart
           width={600}
