@@ -7,13 +7,18 @@ import { PieChart, pieArcLabelClasses, legendClasses, chartsAxisClasses } from '
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList,Pie,Cell   } from 'recharts';
 import { fontSize } from '@mui/system';
+import { useTheme, styled } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import { useAnimate, useAnimateBar, useDrawingArea } from '@mui/x-charts/hooks';
+import { PiecewiseColorLegend } from '@mui/x-charts/ChartsLegend';
+import { interpolateObject } from '@mui/x-charts-vendor/d3-interpolate';
 
 function App() {
   const [incidents, setIncidents] = useState([]);
   const [incidents_esc, setIncidents_esc] = useState([]);
   const [activeinc, setActiveinc] = useState([]);
   const [resolvedinc, setResolvedinc] = useState([]);
-  const [priorityCounts, setpriorityCounts] = useState([]);
   const [latestCI, setLatestCI] = useState(null);
   const [totalW11, setTotalW11] = useState(null)
   const [igelDeviceStatus,setIgelDeviceStatus] = useState([])
@@ -21,10 +26,9 @@ function App() {
 
 
   const [loading, setLoading] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false)
   const [error, setError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
-  const [enableGraph, setStateGraph] = useState(false)
-  const [enableSRGraph, setSRGraph] = useState(false)
   const [isAuthenticated, setIsAuthentication] = useState(false);
   const itemsPerPage = 10;
   const coloredData = igelDeviceStatus.map((item) => ({
@@ -40,6 +44,7 @@ function App() {
 
   const sendSID = async () => {
     try {
+      setLoginLoading(true)
       const ISMresponse = await axios.get('http://localhost:5000/api/incidents', {
         params: { sid: ismSID }
       });
@@ -47,6 +52,7 @@ function App() {
         username: igelusername,
         password: igelpword 
       });
+      setLoginLoading(false)
       if (ISMresponse.status === 200 && IGELResponse.status === 200) {
         localStorage.setItem("ismSID", ismSID);
         localStorage.setItem("igelSID", IGELResponse.data.message);
@@ -228,6 +234,7 @@ function App() {
     }
 };
   const fetchStockCount = async () => {
+  // TODO Edit the fetching stock method from search for each set of 100 KRs, configure the api to search the quantity of each model
   setLoading(true);
   setError(null);
 
@@ -261,16 +268,17 @@ function App() {
     const map = new Map();
 
     for (let i = 0; i < allResults.length; i++) {
-      const model = allResults[i].Model ?? "Unknown";
+      const model = String(allResults[i].Model).toLocaleLowerCase() ?? "Unknown";
       map.set(model, (map.get(model) || 0) + 1);
     }
+   const dataset = Array.from(map.entries()).map(([model, quantity]) => ({
+      model,
+      quantity,
+    }));
 
+    setStockCount(dataset)
+    console.log(dataset)
     
-    
-    console.log("Finished fetching all CIs");
-    console.log("Total CIs fetched:", allResults.length);
-    setStockCount(map)
-    console.log(map)
 
   } catch (err) {
     console.error("Error fetching CIs:", err);
@@ -374,13 +382,18 @@ function App() {
       const interval3 = setInterval(() => {
         fetchStockCount()
       }, 300000); // refreshes every 30 seconds 
-      return () => clearInterval(interval1,interval2);
+      return () => clearInterval(interval1,interval2,interval3);
       
     }
   }, [isAuthenticated]);
 
 
   return (
+    loginLoading ? 
+    (<>
+    loading
+    </>)
+    :
     !isAuthenticated ?
       <div className="login-container">
         <h2>ISM SID</h2>
@@ -584,15 +597,51 @@ function App() {
           {error && <p style={{ color: 'red' }}>{error}</p>}
           {loading && <p style={{color: 'white'}}>Loading Stock counts...</p>}
           {!error && (
-            <>
-            
-            {Array.from(stockCount.entries()).map(([key, value]) => (
-              <p key={key}>
-                <b>{key}</b>: {value}
-              </p>
-            ))}
+          <BarChart
+          width={600}
+          height={550}
+          data={stockCount}   // must be an ARRAY of { model, quantity }
+          layout="vertical"
+          margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid stroke="#444" strokeDasharray="3 3" />
 
-            </>
+          {/* Quantity axis */}
+          <XAxis
+            type="number"
+            stroke="#fff"
+            fontSize={12}
+          />
+
+          {/* Model axis */}
+          <YAxis
+            type="category"
+            dataKey="model"
+            stroke="#fff"
+            fontSize={12}
+            width={120}
+          />
+
+          <Tooltip
+            contentStyle={{
+              backgroundColor: '#222',
+              borderColor: '#555',
+              color: '#fff',
+            }}
+            itemStyle={{ color: '#fff' }}
+          />
+
+          <Legend wrapperStyle={{ color: '#fff' }} />
+
+          <Bar dataKey="quantity" barSize={30} fill="#4dabf7">
+            <LabelList
+              dataKey="quantity"
+              position="right"
+              fill="#fff"
+              fontSize={14}
+            />
+          </Bar>
+        </BarChart>
           )}
           
         </div>
