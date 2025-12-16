@@ -14,13 +14,19 @@ import { useAnimate, useAnimateBar, useDrawingArea } from '@mui/x-charts/hooks';
 import { PiecewiseColorLegend } from '@mui/x-charts/ChartsLegend';
 import { interpolateObject } from '@mui/x-charts-vendor/d3-interpolate';
 
+import login1 from "./assets/login1.png"
+import login2 from "./assets/login2.png"
+import login3 from "./assets/login3.png"
+import login4 from "./assets/login4.png"
+
+
 function App() {
   const [incidents, setIncidents] = useState([]);
   const [incidents_esc, setIncidents_esc] = useState([]);
   const [activeinc, setActiveinc] = useState([]);
   const [resolvedinc, setResolvedinc] = useState([]);
   const [latestCI, setLatestCI] = useState(null);
-  const [totalW11, setTotalW11] = useState(null)
+  const [totalQueue, setTotalQueue] = useState(null)
   const [igelDeviceStatus,setIgelDeviceStatus] = useState([])
   const [stockCount, setStockCount] = useState([])
 
@@ -86,10 +92,10 @@ function App() {
       setIncidents(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
       
     
-    const responsew11 = await axios.get('http://localhost:5000/api/W11Q', {
+    const res = await axios.get('http://localhost:5000/api/queue', {
         params: { sid: ismSID }
       });
-    setTotalW11(responsew11.data.value.length)
+    setTotalQueue(res.data.value.length)
     
       
 
@@ -401,6 +407,7 @@ function App() {
     )
     :
     !isAuthenticated ?
+    <div className='login-con'>
       <div className="login-container">
         <h2>ISM SID</h2>
         <input
@@ -429,6 +436,19 @@ function App() {
         />
         <button onClick={sendSID}>Log In</button>
         {error && <p style={{ color: "red" }}>{error}</p>}
+        
+        
+      </div>
+      <div className='loginHelpContainer'> 
+          <img className='loginHelp' src={login1}></img>
+          <p>Ctrl + Shift + I</p>
+          <img className='loginHelp' src={login2}></img>
+          <p>Go to Cookies</p>
+          <img className='loginHelp' src={login3}></img>
+          <p>From the list select SID - Value</p>
+          <img className='loginHelp' src={login4}></img>
+          <p>bottom right, copy and paste the SID "itservicedesk.kht.local#" into the ISM Login box</p>
+        </div>
       </div>
       :
       <>
@@ -437,7 +457,7 @@ function App() {
 
             {!error && (
               <div className='topinfo'>
-                <h3> Total W11 Queue: {totalW11}</h3>
+                <h3> Total Queue: {totalQueue}</h3>
                 
               </div>
             )}
@@ -457,8 +477,8 @@ function App() {
               <PieChart
               
               series={[{ 
-                innerRadius: 50,
-                outerRadius: 100,
+                innerRadius: 60,
+                outerRadius: 120,
                 data: resolvedinc,
                 arcLabel: 'value',
                 paddingAngle: 5,
@@ -479,7 +499,7 @@ function App() {
                   },
                 }}
               height={300}
-              width={250}
+              width={300}
             />
             </>
           )}
@@ -528,8 +548,8 @@ function App() {
                 <PieChart
                   series={[
                     {
-                      innerRadius: 40,
-                      outerRadius: 90,
+                      innerRadius: 60,
+                      outerRadius: 120,
                       data: coloredData,
                       arcLabel: 'value', // shows the value on the arcs
                       paddingAngle: 5,
@@ -547,7 +567,7 @@ function App() {
                       fontWeight: 'bold',
                     },
                   }}
-                  height={200}
+                  height={300}
                   width={300}
                 >
                   <Legend 
@@ -589,26 +609,19 @@ function App() {
           </div>
          */}
         
-        <div className='section'>
-          <h2 className='section-title'>Next Available KR</h2>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
+        
 
-          {!error && (
-            <h1 style={{fontSize:"75px"}}>{latestCI} </h1>
-          )}
-          
-        </div>
         <div className='section'>
           <h2 className='section-title'>Hardware Stock</h2>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           {stockLoading && <p style={{color: 'white'}}>Loading Stock counts...</p>}
           {!error && (
           <BarChart
-          width={600}
+          width={550}
           height={550}
           data={stockCount}   // must be an ARRAY of { model, quantity }
           layout="vertical"
-          margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+          margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
         >
           <CartesianGrid stroke="#444" strokeDasharray="3 3" />
 
@@ -650,6 +663,21 @@ function App() {
         </BarChart>
           )}
           
+        </div>
+
+        <div className='section'>
+
+
+        </div>
+        <div className='section'>
+          <h2 className='section-title'>Next Available KR</h2>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+
+          {!error && (
+            <h1 style={{fontSize:"75px"}}>
+              {latestCI}
+            </h1>
+          )}
         </div>
       </div>
       </>

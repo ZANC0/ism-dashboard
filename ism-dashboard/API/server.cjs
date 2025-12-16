@@ -40,12 +40,12 @@ app.get('/api/incidents', async (req, res) => {
   }
 });
 
-app.get('/api/W11Q', async (req, res) => {
+app.get('/api/queue', async (req, res) => {
   try {
     const sid = req.query.sid
     // Active Windows 11 Incidents
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=OwnerTeam eq 'Windows 11 Project' and Status eq 'Active'&$top=100",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and Status eq 'Active'&$top=100",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -167,7 +167,7 @@ app.get('/api/Cis', async (req, res) => {
     const kr = req.query.kr
     // Active Windows 11 Incidents
     const total_res = await axios.get(
-      `https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$select=Name, Model, Status&$orderby=Name&$search=${kr}&$filter=(Status eq 'Stock' or Status eq 'Allocated Stock')&$top=100`,
+      `https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$filter=(Status eq 'Stock' or Status eq 'Allocated Stock')&$select=Name, Model, Status&$orderby=Name&$search=${kr}&$top=100`,
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
