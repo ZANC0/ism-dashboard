@@ -14,21 +14,25 @@ import { useAnimate, useAnimateBar, useDrawingArea } from '@mui/x-charts/hooks';
 import { PiecewiseColorLegend } from '@mui/x-charts/ChartsLegend';
 import { interpolateObject } from '@mui/x-charts-vendor/d3-interpolate';
 
+
 import login1 from "./assets/login1.png"
 import login2 from "./assets/login2.png"
 import login3 from "./assets/login3.png"
 import login4 from "./assets/login4.png"
+import esc_sound from "./assets/woop.mp3"
 
 
 function App() {
   const [incidents, setIncidents] = useState([]);
   const [incidents_esc, setIncidents_esc] = useState([]);
+  const [vipIncidents, setVipIncidents] = useState([]);
   const [activeinc, setActiveinc] = useState([]);
   const [resolvedinc, setResolvedinc] = useState([]);
   const [latestCI, setLatestCI] = useState(null);
   const [totalQueue, setTotalQueue] = useState(null)
   const [igelDeviceStatus,setIgelDeviceStatus] = useState([])
   const [stockCount, setStockCount] = useState([])
+  const [srs, setSrs] = useState([])
 
   // Loading States
   const [loading, setLoading] = useState(false);
@@ -48,8 +52,14 @@ function App() {
   const [igelusername, setIgelusername] = useState("");
   const [igelpword, setigelpword] = useState("");
   const [igelsid, setigelsid] = useState("");
-
+  const date = new Date()
+  const audio = new Audio(esc_sound);
+  const [playing, setPlaying] = useState(false);
   
+  useEffect(() => {
+      playing ? audio.play() : audio.pause();
+    },
+  [playing]);
 
   const sendSID = async () => {
     try {
@@ -117,7 +127,7 @@ function App() {
     }
   };
 
-    const fetchEscIncidents = async () => {
+  const fetchEscIncidents = async () => {
     const date = new Date();
     setLastRefresh(date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds());
     setLoading(true);
@@ -128,10 +138,35 @@ function App() {
       });
       const data = response.data.value || response.data;
       const sorted = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
+      console.log(sorted.length)
+      if(sorted.length > 0){
+        setPlaying(true)
+        setTimeout(()=>{
+          setPlaying(false)
+        },10000)
+      }
       setIncidents_esc(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
     } catch (err) {
       console.error('Error fetching esc incidents:', err);
       setError('Failed to fetch esc incidents');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSrEquipment = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:5000/api/sr', {
+        params: { sid: ismSID }
+      });
+      const data = response.data.value || response.data;
+      const sorted = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
+      setSrs(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
+    } catch (err) {
+      console.error('Error fetching SR :', err);
+      setError('Failed to fetch SR');
     } finally {
       setLoading(false);
     }
@@ -143,27 +178,17 @@ function App() {
     setLoading(true);
     setError(null);
     try {
+      const date_obj = new Date()
+      const new_date = date_obj.getFullYear()+"-"+(date_obj.getMonth()+1).toString().padStart(2,0)+"-"+date_obj.getDate().toString().padStart(2,0)
+
       await axios.get('http://localhost:5000/api/activeIncidents', {
-        params: { sid: ismSID }
+        params: { sid: ismSID, date: new_date }
       })
       .then((res) => {
-       const entry = {};
+       
 
-        // Count occurrences per Owner
-        res.data.value.forEach((inc) => {
-          const owner = inc.Owner;
-          entry[owner] = (entry[owner] || 0) + 1;
-        });
-
-        // Convert to Recharts format
-        const activedata = Object.entries(entry).map(([key, value]) => ({
-          name: key,
-          pv: value,
-        }));
-
-        setActiveinc(activedata);
-
-        console.log("Counts:", activedata);
+      setActiveinc(res.data.value);
+      console.log(res.data.value)
 
       })
     } catch (err) {
@@ -200,7 +225,7 @@ function App() {
         label: key + " - " + value,
       }));
       // TODO from the incidents fetched, sort them in a dictionary for each owner and the amount of resolved tickets assigned
-      setResolvedinc(ownerResData); // ✅ show top 10 only
+      setResolvedinc(ownerResData);
       console.log(ownerResData)
     } catch (err){
       console.log("test")
@@ -258,28 +283,51 @@ function App() {
     // Start at KR00100, KR00200, ..., KR03400
     for (let start = 0; start <= maxKr; start += batchSize) {
       const kr = `KR${String(start).padStart(3, "0")}`;
-      const response = await axios.get("http://localhost:5000/api/CIs", {
+      // const kh = `KH${String(start).padStart(1, "0")}`;
+      // const lap = `LAP${String(start).padStart(1, "0")}`;
+      const kr_response = await axios.get("http://localhost:5000/api/CIs/kr", {
         params: {
           sid: ismSID,
           kr: kr
         }
       });
+      // const kh_response = await axios.get("http://localhost:5000/api/CIs/kh", {
+      //   params: {
+      //     sid: ismSID,
+      //     kh: kh
+      //   }
+      // });
+      // const lap_response = await axios.get("http://localhost:5000/api/CIs/lap", {
+      //   params: {
+      //     sid: ismSID,
+      //     lap: lap
+      //   }
+      // });
 
-      const results = response.data?.value || [];
+      const kr_results = kr_response.data?.value || [];
+      // const kh_results = kh_response.data?.value || [];
+      // const lap_results = lap_response.data?.value || [];
 
-      console.log(`Fetched ${results.length} CIs for ${kr}`);
+      console.log(`Fetched ${kr_results.length} CIs for ${kr}`);
+      // console.log(`Fetched ${kh_results.length} CIs for ${kh}`);
+      // console.log(`Fetched ${lap_results.length} CIs for ${lap}`);
 
-      allResults.push(...results);
+      allResults.push(...kr_results);
+      // allResults.push(...kh_results);
+      // allResults.push(...lap_results);
 
       // Safety exit if no results returned
-      if (results.length === 0) break;
+      if (kr_results.length === 0) break;
     }
     
     const map = new Map();
 
     for (let i = 0; i < allResults.length; i++) {
       const model = String(allResults[i].Model).toLocaleLowerCase() ?? "Unknown";
+
       map.set(model, (map.get(model) || 0) + 1);
+      // ! Override slim pro count
+      map.set("pro slim qcs1250", 95)
     }
    const dataset = Array.from(map.entries()).map(([model, quantity]) => ({
       model,
@@ -333,6 +381,27 @@ function App() {
     }
   };
 
+  const fetchVIPTickets = async () => {
+    const date = new Date();
+    setLastRefresh(date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds());
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:5000/api/VIPIncidents', {
+        params: { sid: ismSID }
+      });
+      console.log(response)
+      const data = response.data || [];
+
+      setVipIncidents(data); // ✅ show top 10 only
+    } catch (err) {
+      console.error('Error VIP incidents:', err);
+      setError('Failed to VIP  incidents');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const checkAuth = async () => {
     try {
       const ISMresponse = await axios.get('http://localhost:5000/api/incidents', {
@@ -358,6 +427,10 @@ function App() {
       setLoading(false);
     }
 };
+
+
+
+
   
 
 // CHECK SID AUTH
@@ -374,6 +447,8 @@ function App() {
       fetchLatestCI();
       fetchStockCount();
       fetchDeviceStatus();
+      fetchSrEquipment();
+      fetchVIPTickets();
     }
   }, [isAuthenticated]);
 
@@ -383,15 +458,18 @@ function App() {
         fetchIncidents();
         fetchEscIncidents();
         fetchActiveIncidents();
-      }, 60000); // refreshes every 5 minutes (60,000ms * 5)
+      }, 60000); 
       const interval2 = setInterval(() => {
         fetchResolvedperOwner();
         fetchLatestCI();
         fetchDeviceStatus();
+        fetchVIPTickets();
+        
       }, 30000);
       const interval3 = setInterval(() => {
-        fetchStockCount()
-      }, 300000); // refreshes every 30 seconds 
+        fetchStockCount();
+        fetchSrEquipment();
+      }, 300000); // refreshes every 5 seconds 
       return () => clearInterval(interval1,interval2,interval3);
       
     }
@@ -457,16 +535,13 @@ function App() {
 
             {!error && (
               <div className='topinfo'>
-                <h3> Total Queue: {totalQueue}</h3>
-                
+                <h3> Total Tickets: {totalQueue}</h3>
+                <h2>Workshop Dashboard</h2>
+                <h3> New Calls Today: {activeinc.length}</h3>
               </div>
             )}
       </div>
-
-
-       
-      
-      
+      <button onClick={()=>(setPlaying(!playing))}></button>
       <div className="App">
         <div className='section'>
           <h2 className='section-title'>Resolved Tickets Today</h2>
@@ -666,19 +741,82 @@ function App() {
         </div>
 
         <div className='section'>
-
+          <h2 className='section-title'>
+            VIP Incidents
+            <p>Total: {vipIncidents.length}</p>
+          </h2>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          {!error && (
+            <>
+              <table className="incident-info">
+                <thead>
+                  <tr>
+                    <th>VIP</th>
+                    <th>Incident</th>
+                    <th>Subject</th>
+                    <th>Owner</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vipIncidents.map((incident) => (
+                    <tr key={incident.RecId}>
+                      <td>{incident.ProfileFullName}</td>
+                      <td><b>{incident.IncidentNumber}</b></td>
+                      <td>{incident.Subject}</td>
+                      <td>{incident.Owner}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
 
         </div>
+
         <div className='section'>
-          <h2 className='section-title'>Next Available KR</h2>
+          <h2 className='section-title'>
+            Delivery Due
+            <p>Total: {srs.length}</p>
+          </h2>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          {!error && (
+            <>
+              <table className="incident-info">
+                <thead>
+                  <tr>
+                    <th>Incident</th>
+                    <th>Subject</th>
+                    <th>Owner</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {srs.map((sr) => (
+                    <tr key={sr.RecId}>
+                      <td><b>{sr.ServiceReqNumber}</b></td>
+                      <td>{sr.Subject}</td>
+                      <td>{sr.Owner}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </div>      
+        
+        <div className='section'>
           {error && <p style={{ color: 'red' }}>{error}</p>}
 
           {!error && (
-            <h1 style={{fontSize:"75px"}}>
+            <>
+            <h3>Next Available KR</h3>
+            <h1 style={{fontSize:"75px",margin:"0px"}}>
               {latestCI}
             </h1>
+            </>
           )}
         </div>
+        
+
       </div>
       </>
   );

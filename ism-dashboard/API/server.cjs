@@ -3,7 +3,6 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const https = require('https');
-const { useState } = require('react');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -64,7 +63,7 @@ app.get('/api/sr', async (req, res) => {
   try {
     const sid = req.query.sid
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/servicereqs?$select=ServiceReqNumber,Status,Subject,Owner&$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and Status eq 'Active'",
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/servicereqs?$select=ServiceReqNumber,Status,Subject,Owner&$filter=(OwnerTeam eq 'Windows 11 Project' or OwnerTeam eq 'Desktop Support') and Status eq 'Active' and Subject eq 'IT Equipment Order - IT Use Only'",
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -103,8 +102,9 @@ app.get('/api/incidents_esc', async (req, res) => {
 app.get('/api/activeIncidents', async (req, res) => {
   try {
     const sid = req.query.sid
+    const new_date = req.query.date
     const response = await axios.get(
-      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and Status eq 'Active' and Owner ne '$NULL'&$top=100",
+      `https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and (Status eq 'Active') and (CreatedDateTime ge ${new_date}T00:00:00Z)`,
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -161,13 +161,55 @@ app.get('/api/latest_CI', async (req, res) => {
   }
 });
 
-app.get('/api/Cis', async (req, res) => {
+app.get('/api/Cis/kr', async (req, res) => {
   try {
     const sid = req.query.sid
     const kr = req.query.kr
     // Active Windows 11 Incidents
     const total_res = await axios.get(
       `https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$filter=(Status eq 'Stock' or Status eq 'Allocated Stock')&$select=Name, Model, Status&$orderby=Name&$search=${kr}&$top=100`,
+      {
+        headers: {
+          Cookie: `SID=${sid}` // your SID
+        },
+        httpsAgent, // use agent to ignore SSL errors
+      }
+    );
+    res.json(total_res.data)
+  } catch (err) {
+    console.error('Error fetching lastest CI from server:', err.message);
+    res.status(500).json({ error: 'Failed to fetch lastest CI' });
+  }
+});
+
+app.get('/api/Cis/kh', async (req, res) => {
+  try {
+    const sid = req.query.sid
+    const kh = req.query.kh
+    // Active Windows 11 Incidents
+    const total_res = await axios.get(
+      `https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$filter=(Status eq 'Stock' or Status eq 'Allocated Stock')&$select=Name, Model, Status&$orderby=Name&$search=${kh}&$top=100`,
+      {
+        headers: {
+          Cookie: `SID=${sid}` // your SID
+        },
+        httpsAgent, // use agent to ignore SSL errors
+      }
+    );
+    res.json(total_res.data)
+  } catch (err) {
+    console.error('Error fetching lastest CI from server:', err.message);
+    res.status(500).json({ error: 'Failed to fetch lastest CI' });
+  }
+});
+
+app.get('/api/Cis/lap', async (req, res) => {
+  try {
+    const sid = req.query.sid
+    const lap = req.query.lap
+    // Active Windows 11 Incidents
+    const total_res = await axios.get(
+      `https://itservicedesk.kht.local/HEAT/api/odata/businessobject/CIs?$filter=(Status eq 'Stock' or Status eq 'Allocated Stock')&$select=Name, Model, Status&$orderby=Name&$search=${lap}&$top=100`,
       {
         headers: {
           Cookie: `SID=${sid}` // your SID
@@ -234,6 +276,26 @@ app.get('/UMSapi/getDeviceStatus', async (req, res) => {
   } catch (err) {
     console.error('Error fetching getDeviceStatus from USM API:', err.message);
     res.status(500).json({ error: 'Error fetching getDeviceStatus from USM API' });
+  }
+});
+
+app.get('/api/VIPIncidents', async (req, res) => {
+  try {
+    const sid = req.query.sid
+    const response = await axios.get(
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/Incidents?$filter=(OwnerTeam eq 'Desktop Support' or OwnerTeam eq 'Windows 11 Project') and (Status eq 'Active') and (isVIP eq true)&$top=100",
+      {
+        headers: {
+          Cookie: `SID=${sid}` // your SID
+        },
+        httpsAgent, // use agent to ignore SSL errors
+      }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error fetching VIP tickets from server:', err.message);
+    res.status(500).json({ error: 'Failed to fetch VIP tickets' });
   }
 });
 
