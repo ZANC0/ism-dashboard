@@ -79,6 +79,27 @@ app.get('/api/sr', async (req, res) => {
   }
 });
 
+app.get('/api/srAll', async (req, res) => {
+  try {
+    const sid = req.query.sid
+    const new_date = req.query.date
+    const response = await axios.get(
+      "https://itservicedesk.kht.local/HEAT/api/odata/businessobject/servicereqs?$select=ServiceReqNumber,Status,Subject,Owner&$filter=(OwnerTeam eq 'Windows 11 Project' or OwnerTeam eq 'Desktop Support') and ResolvedDateTime ge "+new_date+""+"T00:00:00Z&$top=100",
+      {
+        headers: {
+          Cookie: `SID=${sid}` // your SID
+        },
+        httpsAgent, // use agent to ignore SSL errors
+      }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error fetching sr from server:', err.message);
+    res.status(500).json({ error: 'Failed to fetch srs' });
+  }
+});
+
 app.get('/api/incidents_esc', async (req, res) => {
   try {
     const sid = req.query.sid

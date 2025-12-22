@@ -20,7 +20,7 @@ import login2 from "./assets/login2.png"
 import login3 from "./assets/login3.png"
 import login4 from "./assets/login4.png"
 import esc_sound from "./assets/woop.mp3"
-
+import esc_complete from "./assets/crowd-cheer.mp3"
 
 function App() {
   const [incidents, setIncidents] = useState([]);
@@ -31,8 +31,10 @@ function App() {
   const [latestCI, setLatestCI] = useState(null);
   const [totalQueue, setTotalQueue] = useState(null)
   const [igelDeviceStatus,setIgelDeviceStatus] = useState([])
-  const [stockCount, setStockCount] = useState([])
+  const [stockCount, setStockCount] = useState([{"model":"none","quantity":0}])
   const [srs, setSrs] = useState([])
+  const [srAll, setSrAll] = useState([])
+  const [previousEscCount, setPreviousEscCount] = useState(0)
 
   // Loading States
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,7 @@ function App() {
   const [stockLoading, setStockLoading] = useState(true)
   const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthentication] = useState(false);
+  const [dateState, setDateState] = useState(new Date())
 
   const [lastRefresh, setLastRefresh] = useState(null);
   
@@ -54,12 +57,8 @@ function App() {
   const [igelsid, setigelsid] = useState("");
   const date = new Date()
   const audio = new Audio(esc_sound);
-  const [playing, setPlaying] = useState(false);
+  const completed_esc_audio = new Audio(esc_complete)
   
-  useEffect(() => {
-      playing ? audio.play() : audio.pause();
-    },
-  [playing]);
 
   const sendSID = async () => {
     try {
@@ -128,6 +127,7 @@ function App() {
   };
 
   const fetchEscIncidents = async () => {
+    setPreviousEscCount(incidents_esc.length)
     const date = new Date();
     setLastRefresh(date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds());
     setLoading(true);
@@ -138,14 +138,9 @@ function App() {
       });
       const data = response.data.value || response.data;
       const sorted = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
-      console.log(sorted.length)
-      if(sorted.length > 0){
-        setPlaying(true)
-        setTimeout(()=>{
-          setPlaying(false)
-        },10000)
-      }
+      
       setIncidents_esc(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
+      
     } catch (err) {
       console.error('Error fetching esc incidents:', err);
       setError('Failed to fetch esc incidents');
@@ -153,6 +148,16 @@ function App() {
       setLoading(false);
     }
   };
+
+
+  useEffect(() => {
+    if(incidents_esc.length > previousEscCount){
+      audio.play()
+    } else{
+      completed_esc_audio.play()
+    }
+
+  }, [incidents_esc.length])
 
   const fetchSrEquipment = async () => {
     setLoading(true);
@@ -172,6 +177,26 @@ function App() {
     }
   };
 
+  const fetchSrAll = async () => {
+    const date_obj = new Date()
+    setLoading(true);
+    setError(null);
+    try {
+      const new_date = date_obj.getFullYear()+"-"+(date_obj.getMonth()+1).toString().padStart(2,0)+"-"+date_obj.getDate().toString().padStart(2,0)
+      const response = await axios.get('http://localhost:5000/api/srAll', {
+        params: { sid: ismSID, date:new_date  }
+      });
+      const data = response.data.value || response.data;
+      const sorted = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
+      setSrAll(sorted.slice(0, itemsPerPage)); // ✅ show top 10 only
+    } catch (err) {
+      console.error('Error fetching All SR :', err);
+      setError('Failed to fetch All SR');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchActiveIncidents = async () => {
     const date = new Date();
     setLastRefresh(date.getHours() + ':' + date.getMinutes() + ":" + date.getSeconds());
@@ -186,9 +211,10 @@ function App() {
       })
       .then((res) => {
        
-
-      setActiveinc(res.data.value);
-      console.log(res.data.value)
+      const data = res.data.value || []
+      setActiveinc(data);
+      
+      console.log(data)
 
       })
     } catch (err) {
@@ -205,19 +231,38 @@ function App() {
     setLoading(true);
     setError(null);
     try {
+      const ownerRes = {}
       const date_obj = new Date()
       const new_date = date_obj.getFullYear()+"-"+(date_obj.getMonth()+1).toString().padStart(2,0)+"-"+date_obj.getDate().toString().padStart(2,0)
+      
+      const srresponse = await axios.get('http://localhost:5000/api/srAll', {
+        params: { sid: ismSID, date:new_date  }
+      });
+      const data = srresponse.data.value || srresponse.data;
+      const srdata = [...data].sort((a, b) => Number(b.IncidentNumber) - Number(a.IncidentNumber));
+      console.log(srdata)
+
+
+
+
       const response = await axios.get('http://localhost:5000/api/resolved_incidents_today', {
         params: { sid: ismSID, date:new_date }
       });
-      const ownerRes = {}
+      
       const ownerData = response.data.value || {}
       try{
         ownerData.forEach((inc) => {
         if (inc.Owner !== null){
           ownerRes[inc.Owner] = (ownerRes[inc.Owner] || 0) + 1; // Initialize and increment count
         }
+        
       });
+      console.log(srdata)
+        srdata.forEach((inc) => {
+          if (inc.Owner !== null){
+            console.log(inc.Owner)
+            ownerRes[inc.Owner] = (ownerRes[inc.Owner] || 0) + 1; // Initialize and increment count
+          }})
 
       const ownerResData = Object.entries(ownerRes).map(([key, value]) => ({
         id: key,
@@ -225,6 +270,7 @@ function App() {
         label: key + " - " + value,
       }));
       // TODO from the incidents fetched, sort them in a dictionary for each owner and the amount of resolved tickets assigned
+      
       setResolvedinc(ownerResData);
       console.log(ownerResData)
     } catch (err){
@@ -323,16 +369,16 @@ function App() {
     const map = new Map();
 
     for (let i = 0; i < allResults.length; i++) {
-      const model = String(allResults[i].Model).toLocaleLowerCase() ?? "Unknown";
+      const model = String(allResults[i].Model).toLocaleUpperCase() ?? "Unknown";
 
       map.set(model, (map.get(model) || 0) + 1);
       // ! Override slim pro count
-      map.set("pro slim qcs1250", 95)
+      map.set("pro slim qcs1250".toLocaleUpperCase(), 95)
     }
-   const dataset = Array.from(map.entries()).map(([model, quantity]) => ({
-      model,
-      quantity,
-    }));
+   const dataset = Array.from(map.entries())
+  .map(([model, quantity]) => ({ model, quantity }))
+  .sort((a, b) => b.quantity - a.quantity);
+
     setStockLoading(false);
     setStockCount(dataset)
     console.log(dataset)
@@ -345,8 +391,6 @@ function App() {
     setLoading(false);
   }
 };
-
-
 
   const fetchDeviceStatus = async () => {
     setLoading(true);
@@ -391,7 +435,7 @@ function App() {
         params: { sid: ismSID }
       });
       console.log(response)
-      const data = response.data || [];
+      const data = response.data.value || [];
 
       setVipIncidents(data); // ✅ show top 10 only
     } catch (err) {
@@ -428,10 +472,13 @@ function App() {
     }
 };
 
-
-
-
-  
+const COLORS = [
+  '#4dabf7',
+  '#74c0fc',
+  '#a5d8ff',
+  '#339af0',
+  '#1c7ed6',
+];  
 
 // CHECK SID AUTH
   useEffect(() => {
@@ -512,7 +559,7 @@ function App() {
           value={igelpword}
           onChange={(e) => setigelpword(e.target.value)}
         />
-        <button onClick={sendSID}>Log In</button>
+        <button onClick={() => {sendSID(); audio.pause()}}>Log In</button>
         {error && <p style={{ color: "red" }}>{error}</p>}
         
         
@@ -535,13 +582,12 @@ function App() {
 
             {!error && (
               <div className='topinfo'>
-                <h3> Total Tickets: {totalQueue}</h3>
-                <h2>Workshop Dashboard</h2>
-                <h3> New Calls Today: {activeinc.length}</h3>
+                <h2> Total Tickets: {totalQueue}</h2>
+                <h1>Workshop Dashboard</h1>
+                <h2> New Calls Today: {activeinc.length}</h2>
               </div>
             )}
       </div>
-      <button onClick={()=>(setPlaying(!playing))}></button>
       <div className="App">
         <div className='section'>
           <h2 className='section-title'>Resolved Tickets Today</h2>
@@ -563,7 +609,8 @@ function App() {
               sx={{
                   [`& .${legendClasses.label}`]: {
                     color:"white",
-                    fontSize:15
+                    fontSize:20,
+                    margin:"5px"
                   },
                   [`& .${pieArcLabelClasses.root}`]: {
                     fill: 'white',   // 👈 your text color
@@ -617,7 +664,7 @@ function App() {
         
 
         <div className="section">
-              <h2 className="section-title">IGEL Device Status</h2>
+              <h2 className="section-title">IGEL Online/Offline</h2>
               {error && <p style={{ color: 'red' }}>{error}</p>}
               {!error && igelDeviceStatus.length > 0 && (
                 <PieChart
@@ -691,51 +738,17 @@ function App() {
           {error && <p style={{ color: 'red' }}>{error}</p>}
           {stockLoading && <p style={{color: 'white'}}>Loading Stock counts...</p>}
           {!error && (
-          <BarChart
-          width={550}
-          height={550}
-          data={stockCount}   // must be an ARRAY of { model, quantity }
-          layout="vertical"
-          margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
-        >
-          <CartesianGrid stroke="#444" strokeDasharray="3 3" />
-
-          {/* Quantity axis */}
-          <XAxis
-            type="number"
-            stroke="#fff"
-            fontSize={12}
-          />
-
-          {/* Model axis */}
-          <YAxis
-            type="category"
-            dataKey="model"
-            stroke="#fff"
-            fontSize={12}
-            width={120}
-          />
-
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#222',
-              borderColor: '#555',
-              color: '#fff',
-            }}
-            itemStyle={{ color: '#fff' }}
-          />
-
-          <Legend wrapperStyle={{ color: '#fff' }} />
-
-          <Bar dataKey="quantity" barSize={30} fill="#4dabf7">
-            <LabelList
-              dataKey="quantity"
-              position="right"
-              fill="#fff"
-              fontSize={14}
-            />
-          </Bar>
-        </BarChart>
+          <>
+          <BarChart width={625} height={800} data={stockCount} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }} >
+            <CartesianGrid stroke="#444" strokeDasharray="3 3" /> {/* Quantity axis */} 
+            <XAxis type="number" stroke="#fff" fontSize={12} /> {/* Model axis */}
+            <YAxis type="category" dataKey="model" stroke="#fff" fontSize={12} width={120} /> 
+            <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#555', color: '#fff', }} itemStyle={{ color: '#fff' }} /> 
+            <Legend wrapperStyle={{ color: '#fff' }} /> <Bar dataKey="quantity" barSize={30} fill="#4dabf7"> 
+              <LabelList dataKey="quantity" position="right" fill="#fff" fontSize={14} /> 
+            </Bar> 
+            </BarChart>
+            </>
           )}
           
         </div>
@@ -808,14 +821,17 @@ function App() {
 
           {!error && (
             <>
-            <h3>Next Available KR</h3>
-            <h1 style={{fontSize:"75px",margin:"0px"}}>
+            <h2 className='section-title'>Next Available KR</h2>
+            <h1 className="kpi-value">
               {latestCI}
             </h1>
+
             </>
           )}
         </div>
-        
+        <div className='section'>
+          <h1>{}</h1>
+        </div>
 
       </div>
       </>
