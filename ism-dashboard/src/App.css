@@ -16,7 +16,7 @@
   height: 100%;
   display: grid;
   grid-template-columns: 1fr repeat(2, 1fr);
-  grid-template-rows: 400px 1fr 400px;
+  grid-template-rows: 300px 1fr 300px;
   gap: 0.6rem;
   padding: 0.6rem;
   overflow: auto;
@@ -70,13 +70,19 @@
 
 .section-title {
   position: relative;
+  margin: 0;
+  padding: 5px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-evenly;
   top: 0;
   z-index: 2;
   width: 100%;
-  padding: 0.75rem 1rem;
   font-size: 1.2rem;
   font-weight: 600;
   letter-spacing: 0.4px;
+  height: fit-content;
 
   background: linear-gradient(
     90deg,
@@ -87,18 +93,20 @@
 
   border-bottom: 1px solid var(--border-subtle);
 }
+.section-title > p{
+  margin: 0;
+}
 
 
 
 
 /* Table container */
 .incident-info {
-  width: 95%;
+  width: 90%;
   margin: 0.5rem auto 1rem;
   border-collapse: collapse;
-  font-size: 0.95rem;
 
-  background: var(--bg-card);
+
   border-radius: 12px;
   overflow: hidden;
 
@@ -112,7 +120,7 @@
   padding: 0.65rem 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   letter-spacing: 0.08em;
 
   color: var(--text-muted);
@@ -124,6 +132,8 @@
   padding: 0.7rem 0.75rem;
   color: #f1f5f9;
   border-bottom: 1px solid #1f2327;
+  text-align: center;
+  font-size: 0.85rem;
 }
 
 .incident-info tbody tr:nth-child(even) {
@@ -143,7 +153,7 @@
   grid-template-columns: repeat(3, 1fr);
   justify-items: center;
 
-  height: 60px;
+  height: 40px;
   padding: 0 1rem;
 
   background: linear-gradient(
@@ -154,7 +164,7 @@
   top:0;
 
   color: white;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   align-content: center;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -214,25 +224,45 @@
   font-size: 25px;
   color:"white"
 }
-.loginHelpContainer{
-  height: 100%;
-  width: 50%;
-  display:flex;
+.loginHelpContainer {
+  height: 50%;
+  width: 70%;
+  display: flex;
   flex-direction: column;
   align-items: center;
-  gap:0.2rem;
-
+  gap: 1rem;
 }
-.loginHelp{
 
-  width: 400px;
+.loginHelp {
+  width: 800px;
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
+
+.loginCaption {
+  text-align: center;
+  font-size: 0.95rem;
+  max-width: 420px;
+}
+
+.loginControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loginControls button {
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
 .kpi-value {
-  font-size: clamp(3.5rem, 6vw, 5.5rem);
+  font-size: clamp(2.5rem, 4vw, 5.5rem);
   font-weight: 700;
   letter-spacing: 0.5rem;
  
-  width: 90%;
+  width: 95%;
   align-self: center;
   
 

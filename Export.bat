@@ -1,0 +1,1 @@
+copy ism-dashboard\API\server.cjs \\thetis\it.grp\Toolbox\Packaging Files\Tools\Zanco\dashboard

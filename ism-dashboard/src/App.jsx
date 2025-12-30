@@ -20,7 +20,7 @@ import login2 from "./assets/login2.png"
 import login3 from "./assets/login3.png"
 import login4 from "./assets/login4.png"
 import esc_sound from "./assets/woop.mp3"
-import esc_complete from "./assets/crowd-cheer.mp3"
+import isReadimg from "./assets/isread.png"
 
 function App() {
   const [incidents, setIncidents] = useState([]);
@@ -57,7 +57,6 @@ function App() {
   const [igelsid, setigelsid] = useState("");
   const date = new Date()
   const audio = new Audio(esc_sound);
-  const completed_esc_audio = new Audio(esc_complete)
   
 
   const sendSID = async () => {
@@ -149,15 +148,15 @@ function App() {
     }
   };
 
+// AUDIO
+  // useEffect(() => {
+  //   if(incidents_esc.length > previousEscCount){
+  //     audio.play()
+  //   } else{
+  //     completed_esc_audio.play()
+  //   }
 
-  useEffect(() => {
-    if(incidents_esc.length > previousEscCount){
-      audio.play()
-    } else{
-      completed_esc_audio.play()
-    }
-
-  }, [incidents_esc.length])
+  // }, [incidents_esc.length])
 
   const fetchSrEquipment = async () => {
     setLoading(true);
@@ -472,13 +471,53 @@ function App() {
     }
 };
 
-const COLORS = [
-  '#4dabf7',
-  '#74c0fc',
-  '#a5d8ff',
-  '#339af0',
-  '#1c7ed6',
-];  
+const slides = [
+  {
+    image: login1,
+    caption: "Press Ctrl + Shift + I to open Developer Tools"
+  },
+  {
+    image: login2,
+    caption: "Click on '+' and Navigate to the Application Tab"
+  },
+  {
+    image: login3,
+    caption: "Navigate to the Cookies tab"
+  },
+  {
+    image: login4,
+    caption:
+      'Click on SID, Bottom right: copy the SID value (e.g. "itservicedesk.kht.local#") and paste it into the ISM SID box'
+  }
+];
+
+const priorityColors = 
+  {
+    1:"#b50000ff",
+  
+    2:"#e25e00ff",
+  
+    3:"#69a100ff",
+  
+    4:"#00a6ffff",
+    5:"transparent"
+  }
+
+
+const [currentSlide, setCurrentSlide] = useState(0);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) =>
+      prev === slides.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) =>
+      prev === 0 ? slides.length - 1 : prev - 1
+    );
+  };
+
 
 // CHECK SID AUTH
   useEffect(() => {
@@ -564,15 +603,21 @@ const COLORS = [
         
         
       </div>
-      <div className='loginHelpContainer'> 
-          <img className='loginHelp' src={login1}></img>
-          <p>Ctrl + Shift + I</p>
-          <img className='loginHelp' src={login2}></img>
-          <p>Go to Cookies</p>
-          <img className='loginHelp' src={login3}></img>
-          <p>From the list select SID - Value</p>
-          <img className='loginHelp' src={login4}></img>
-          <p>bottom right, copy and paste the SID "itservicedesk.kht.local#" into the ISM Login box</p>
+        <div className="loginHelpContainer">
+          <img
+            className="loginHelp"
+            src={slides[currentSlide].image}
+            alt="Login help step"
+          />
+          <p className="loginCaption">{slides[currentSlide].caption}</p>
+
+          <div className="loginControls">
+            <button onClick={prevSlide}>Previous</button>
+            <span>
+              {currentSlide + 1} / {slides.length}
+            </span>
+            <button onClick={nextSlide}>Next</button>
+          </div>
         </div>
       </div>
       :
@@ -583,7 +628,7 @@ const COLORS = [
             {!error && (
               <div className='topinfo'>
                 <h2> Total Tickets: {totalQueue}</h2>
-                <h1>Workshop Dashboard</h1>
+                <h1></h1>
                 <h2> New Calls Today: {activeinc.length}</h2>
               </div>
             )}
@@ -598,13 +643,12 @@ const COLORS = [
               <PieChart
               
               series={[{ 
-                innerRadius: 60,
-                outerRadius: 120,
+                innerRadius: 40,
+                outerRadius: 80,
                 data: resolvedinc,
                 arcLabel: 'value',
                 paddingAngle: 5,
-                cornerRadius: 5
-                
+                cornerRadius: 5,
                 }]}
               sx={{
                   [`& .${legendClasses.label}`]: {
@@ -614,13 +658,13 @@ const COLORS = [
                   },
                   [`& .${pieArcLabelClasses.root}`]: {
                     fill: 'white',   // 👈 your text color
-                    fontSize: 25,
+                    fontSize: 20,
                     fontWeight: 'bold',
                     border:'2px solid rgba(0, 0, 0, 0.1)',
                     
                   },
                 }}
-              height={300}
+              height={200}
               width={300}
             />
             </>
@@ -648,7 +692,7 @@ const COLORS = [
                 </thead>
                 <tbody>
                   {incidents_esc.map((incident) => (
-                    <tr key={incident.RecId}>
+                    <tr key={incident.RecId} style={{backgroundColor:priorityColors[incident.Priority]}}>
                       <td><b>{incident.IncidentNumber}</b></td>
                       <td>{incident.Subject}</td>
                       <td>{incident.Owner}</td>
@@ -670,8 +714,8 @@ const COLORS = [
                 <PieChart
                   series={[
                     {
-                      innerRadius: 60,
-                      outerRadius: 120,
+                      innerRadius: 40,
+                      outerRadius: 80,
                       data: coloredData,
                       arcLabel: 'value', // shows the value on the arcs
                       paddingAngle: 5,
@@ -681,16 +725,16 @@ const COLORS = [
                   sx={{
                     [`& .${legendClasses.label}`]: {
                       color: 'white',   // legend text color
-                      fontSize: 18,
+                      fontSize: 9,
                     },
                     [`& .${pieArcLabelClasses.root}`]: {
                       fill: 'white',    // arc label color
-                      fontSize: 24,
+                      fontSize: 16,
                       fontWeight: 'bold',
                     },
                   }}
-                  height={300}
-                  width={300}
+                  height={200}
+                  width={200}
                 >
                   <Legend 
                     position="bottom" 
@@ -739,7 +783,7 @@ const COLORS = [
           {stockLoading && <p style={{color: 'white'}}>Loading Stock counts...</p>}
           {!error && (
           <>
-          <BarChart width={625} height={800} data={stockCount} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }} >
+          <BarChart width={500} height={500} data={stockCount} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }} >
             <CartesianGrid stroke="#444" strokeDasharray="3 3" /> {/* Quantity axis */} 
             <XAxis type="number" stroke="#fff" fontSize={12} /> {/* Model axis */}
             <YAxis type="category" dataKey="model" stroke="#fff" fontSize={12} width={120} /> 
@@ -772,7 +816,7 @@ const COLORS = [
                 </thead>
                 <tbody>
                   {vipIncidents.map((incident) => (
-                    <tr key={incident.RecId}>
+                    <tr key={incident.RecId} style={{backgroundColor:priorityColors[incident.Priority]}}>
                       <td>{incident.ProfileFullName}</td>
                       <td><b>{incident.IncidentNumber}</b></td>
                       <td>{incident.Subject}</td>
@@ -825,12 +869,40 @@ const COLORS = [
             <h1 className="kpi-value">
               {latestCI}
             </h1>
-
             </>
           )}
         </div>
         <div className='section'>
-          <h1>{}</h1>
+          <h2 className='section-title'>
+            P1 Incidents
+          </h2>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          {!error && (
+            <>
+              <table className="incident-info">
+                <thead>
+                  <tr>
+                    <th>Incident</th>
+                    <th>Subject</th>
+                    <th>Owner</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeinc.map((incident)=>{
+                    if (incident.Priority == 1){
+                      return (
+                        <tr key={incident.RecId} style={{backgroundColor:"red"}}>
+                          <td><b>{incident.IncidentNumber}</b></td>
+                          <td>{incident.Subject}</td>
+                          <td>{incident.Owner}</td>
+                        </tr>
+                      )
+                    }
+                  })}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
 
       </div>
